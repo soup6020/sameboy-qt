@@ -1,0 +1,36 @@
+name: Upstream drift
+
+# Builds and tests against the tip of upstream SameBoy so API or asset changes
+# are noticed before running scripts/sync-sameboy.sh.
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+jobs:
+  upstream-master:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Move submodule to upstream master
+        id: upstream
+        run: |
+          git -C third_party/SameBoy fetch origin master
+          git -C third_party/SameBoy checkout --detach origin/master
+          echo "commit=$(git -C third_party/SameBoy rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Pinned: $(git rev-parse HEAD:third_party/SameBoy)"
+          echo "Testing upstream master: $(git -C third_party/SameBoy log -1 --oneline)"
+          git -C third_party/SameBoy log --oneline "$(git rev-parse HEAD:third_party/SameBoy)..HEAD" || true
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Build and test against upstream master
+        run: |
+          nix develop --command bash -c '
+            cmake -S . -B build -G Ninja &&
+            cmake --build build &&
+            cd build && QT_QPA_PLATFORM=offscreen SDL_AUDIO_DRIVER=dummy ctest --output-on-failure'
+      - name: Report
+        if: failure()
+        run: echo "::error::sameboy-qt no longer builds or passes tests against upstream SameBoy ${{ steps.upstream.outputs.commit }}"

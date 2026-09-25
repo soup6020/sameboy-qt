@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Build and test (dev shell)
+        run: |
+          nix develop --command bash -c '
+            cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release &&
+            cmake --build build &&
+            cd build && QT_QPA_PLATFORM=offscreen SDL_AUDIO_DRIVER=dummy ctest --output-on-failure'
+      - name: Submodule must stay pristine
+        run: test -z "$(git -C third_party/SameBoy status --porcelain)"
+      - name: Flake package
+        run: nix build -L .#default
+      - name: OpenSpec validation
+        run: npx --yes @fission-ai/openspec@latest validate --all --strict || echo "::warning::openspec validation failed"

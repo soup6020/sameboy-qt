@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Sameboy-qt
+GenericName=Game Boy Emulator
+Comment=Game Boy and Game Boy Color emulator
+Keywords=game;boy;gameboy;color;emulator;
+Exec=sameboy-qt %F
+Icon=sameboy-qt
+Terminal=false
+StartupNotify=false
+StartupWMClass=sameboy-qt
+Categories=Game;Emulator;
+MimeType=application/x-gameboy-rom;application/x-gameboy-color-rom;application/x-gameboy-isx;

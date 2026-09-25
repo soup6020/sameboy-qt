@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/">
+        <!-- Upstream's app icon, straight from the submodule -->
+        <file alias="icon.png">../third_party/SameBoy/FreeDesktop/AppIcon/256x256.png</file>
+    </qresource>
+</RCC>

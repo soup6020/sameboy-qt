@@ -1,0 +1,44 @@
+schema: spec-driven
+
+context: |
+  Project: sameboy-qt, a Qt 6 (C++20) desktop frontend for the SameBoy Game Boy emulator.
+  Goal: match the upstream macOS Cocoa frontend (third_party/SameBoy/Cocoa) in functionality wherever
+  the platform allows, on Linux (primary), Windows and macOS.
+  Upstream SameBoy is vendored as an unmodified git submodule at third_party/SameBoy. The core is
+  compiled directly from the submodule; never patch submodule files. All glue lives in src/.
+  Upstream syncs must stay cheap: glob Core/*.c, read version from version.mk, consume Shaders/,
+  BootROMs/ and Misc/ from the submodule at build time.
+  Build: CMake + Ninja, Qt 6 Widgets/OpenGLWidgets/Multimedia/PrintSupport, SDL3 (gamepads + audio),
+  rgbds (boot ROMs). Dev environment via Nix flake using flake-parts.
+  Settings keys mirror the Cocoa NSUserDefaults key names (e.g. GBColorCorrection) stored via QSettings.
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
