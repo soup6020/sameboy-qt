@@ -29,7 +29,7 @@
             qt6.qtbase
             qt6.qtmultimedia
             sdl3
-          ] ++ lib.optionals pkgs.stdenv.isLinux [ qt6.qtwayland ];
+          ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [ qt6.qtwayland ];
 
           upstreamVersion =
             let
@@ -67,7 +67,7 @@
 
             # Desktop integration (upstream FreeDesktop icon + MIME info) must be installed.
             nativeInstallCheckInputs = [ pkgs.desktop-file-utils ];
-            doInstallCheck = pkgs.stdenv.isLinux;
+            doInstallCheck = pkgs.stdenv.hostPlatform.isLinux;
             installCheckPhase = ''
               runHook preInstallCheck
               desktop-file-validate $out/share/applications/sameboy-qt.desktop
