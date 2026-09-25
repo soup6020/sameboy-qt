@@ -90,11 +90,13 @@ void WelcomeWindow::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     const QRect area = centralWidget()->geometry();
-    painter.fillRect(area, Qt::black);
     if (m_background.isNull()) {
+        painter.fillRect(area, Qt::black);
         return;
     }
-    // Same layout as the game screen: keep the aspect ratio, letterbox in black.
+    // Keep the logo's aspect ratio, but fill the rest of the window with the
+    // logo's own (palette-tinted) backdrop colour instead of black bars.
+    painter.fillRect(area, m_background.pixelColor(0, 0));
     QSize size = m_background.size();
     size.scale(area.size(), Qt::KeepAspectRatio);
     const QRect target(area.topLeft() + QPoint((area.width() - size.width()) / 2, (area.height() - size.height()) / 2), size);
