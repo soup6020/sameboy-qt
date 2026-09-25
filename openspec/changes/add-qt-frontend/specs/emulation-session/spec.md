@@ -22,7 +22,7 @@ The application SHALL open `.gb`, `.gbc`, `.isx`, `.gbs` and `.gbcart` cartridge
 - **THEN** the warnings are shown once in a non-modal notice attached to the window
 
 ### Requirement: Idle window
-When no game is open, the application SHALL show an idle window. The idle window SHALL display upstream's SDL frontend logo (`SDL/background.bmp`) recoloured with the selected monochrome palette. It SHALL keep the logo's aspect ratio and offer File (Open…, Open Recent, Quit), Edit (Preferences…) and Help menus. Launching without file arguments SHALL show the idle window, not a file dialog. Opening a game SHALL replace the idle window. Closing the last game window SHALL return to the idle window, while Quit SHALL exit the application.
+When no game is open, the application SHALL show an idle window. The idle window SHALL display upstream's SDL frontend logo (`SDL/background.bmp`) recoloured with the selected monochrome palette. It SHALL keep the logo's aspect ratio and offer File (Open…, Open Recent, Quit), Settings and Help menus. Launching without file arguments SHALL show the idle window, not a file dialog. Opening a game SHALL replace the idle window. Closing the last game window SHALL return to the idle window, while Quit SHALL exit the application.
 
 #### Scenario: Launch without arguments
 - **WHEN** the application starts with no files

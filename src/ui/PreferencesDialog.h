@@ -12,6 +12,7 @@ class QPushButton;
 class QSlider;
 class QSpinBox;
 class QTableWidget;
+class QTabWidget;
 class PaletteEditorDialog;
 
 // The Preferences window (Preferences.xib + GBPreferencesWindow.m): Emulation,
@@ -21,7 +22,10 @@ class PreferencesDialog : public QDialog
     Q_OBJECT
 
 public:
+    enum Tab { EmulationTab, VideoTab, AudioTab, ControlsTab };
+
     explicit PreferencesDialog(QWidget *parent = nullptr);
+    void setCurrentTab(Tab tab);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -54,6 +58,7 @@ private:
     void controllerInput(const QString &uniqueId, const QString &inputId, bool pressed);
     void stopConfiguration();
 
+    QTabWidget *m_tabs = nullptr;
     QComboBox *m_paletteButton = nullptr;
     QPointer<PaletteEditorDialog> m_paletteEditor;
     QComboBox *m_bootROMsButton = nullptr;

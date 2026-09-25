@@ -56,6 +56,7 @@
 ## 8. Preferences
 
 - [x] 8.1 `PreferencesDialog` Emulation/Video/Audio/Controls tabs bound to settings; verify every tab renders with Cocoa defaults
+- [x] 8.3 Replace the Edit menu with an ares-style Settings menu (one entry per Preferences tab + Preferences…) shared by game and idle windows; verify Settings → Video… opens Preferences on the Video tab
 - [ ] 8.2 `PaletteEditorDialog` with themes, auto-color generation, manual mode, `.sbp` import/export and restore defaults; verify export→import gives identical parameters (implemented; round-trip not yet verified, and theme selection is covered by `customPalette`)
 
 ## 9. Developer tools

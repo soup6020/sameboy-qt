@@ -11,6 +11,7 @@
 #include <QFileInfo>
 #include <QFileOpenEvent>
 #include <QMenu>
+#include <QMenuBar>
 #include <QMessageBox>
 #include <QSystemTrayIcon>
 #include <QTimer>
@@ -125,6 +126,33 @@ void AppController::showPreferences()
     m_preferences->show();
     m_preferences->raise();
     m_preferences->activateWindow();
+}
+
+void AppController::showPreferencesTab(int tab)
+{
+    showPreferences();
+    m_preferences->setCurrentTab(PreferencesDialog::Tab(tab));
+}
+
+QMenu *AppController::addSettingsMenu(QMenuBar *bar)
+{
+    QMenu *menu = bar->addMenu(tr("&Settings"));
+    const std::pair<QString, PreferencesDialog::Tab> tabs[] = {
+        {tr("&Emulation…"), PreferencesDialog::EmulationTab},
+        {tr("&Video…"), PreferencesDialog::VideoTab},
+        {tr("&Audio…"), PreferencesDialog::AudioTab},
+        {tr("&Controls…"), PreferencesDialog::ControlsTab},
+    };
+    for (const auto &[title, tab] : tabs) {
+        const int index = int(tab);
+        QAction *action = menu->addAction(title, this, [this, index] { showPreferencesTab(index); });
+        action->setMenuRole(QAction::NoRole); // Keep these in the Settings menu on macOS
+    }
+    menu->addSeparator();
+    QAction *preferences = menu->addAction(tr("&Preferences…"), QKeySequence(Qt::CTRL | Qt::Key_Comma), this,
+                                           &AppController::showPreferences);
+    preferences->setMenuRole(QAction::PreferencesRole);
+    return menu;
 }
 
 void AppController::showAbout()

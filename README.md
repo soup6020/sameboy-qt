@@ -99,6 +99,7 @@ Why this stays cheap:
 
 Differences worth knowing:
 - Keyboard bindings are stored as Qt key codes rather than Mac virtual key codes.
+- Preferences are reached from a **Settings** menu (like ares), with one entry per tab (Emulation, Video, Audio, Controls) plus Preferences… (Ctrl+,), instead of Cocoa's app-menu item.
 - Menu shortcuts use Ctrl where Cocoa uses ⌘. On macOS Qt maps them back to ⌘.
 - Break Debugger is Ctrl+C on Linux/Windows (⌃C on macOS).
 - Save ROM Modifications is Ctrl+Alt+Shift+S (⌃⌘S on macOS).

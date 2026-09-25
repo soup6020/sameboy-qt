@@ -17,6 +17,17 @@ Preferences (Ctrl+,) SHALL have four tabs:
 - **WHEN** the user changes a setting, closes Preferences and restarts the app
 - **THEN** the setting is retained
 
+### Requirement: Settings menu
+Instead of an Edit menu, every window (game windows and the idle window) SHALL have a Settings menu, in the style of ares. It SHALL contain one entry per Preferences tab (Emulation…, Video…, Audio…, Controls…), each opening Preferences on that tab, followed by Preferences… (Ctrl+,) which opens it on the last-used tab. On macOS, Preferences… SHALL move to the application menu while the tab entries stay in Settings.
+
+#### Scenario: Jump to a tab
+- **WHEN** the user chooses Settings → Audio… while a game is running
+- **THEN** the Preferences window opens (or comes to the front) showing the Audio tab, and emulation keeps running
+
+#### Scenario: Idle window
+- **WHEN** no game is open and the user chooses Settings → Controls…
+- **THEN** the Preferences window opens on the Controls tab
+
 ### Requirement: Settings persistence with Cocoa key names
 Settings SHALL persist in the platform-native settings store, at `~/.config/sameboy-qt/sameboy-qt.conf` on Linux. Settings found in the previous location (`~/.config/SameBoy/SameBoy-Qt.conf`) SHALL be migrated once when the new store is empty. They SHALL use the Cocoa defaults key names (for example `GBFilter`, `GBColorCorrection`, `GBEmulatedModel`) and the same default values.
 

@@ -5,6 +5,7 @@
 #include <QPointer>
 
 class QMenu;
+class QMenuBar;
 class QSystemTrayIcon;
 class QTimer;
 class PreferencesDialog;
@@ -22,7 +23,12 @@ public:
 
     void openFiles(const QStringList &paths);
     void showOpenDialog();
-    void showPreferences();
+    void showPreferences();          // Opens on the last-used tab
+    void showPreferencesTab(int tab); // PreferencesDialog::Tab
+
+    // The Settings menu shared by game windows and the idle window: one entry
+    // per Preferences tab, plus Preferences… (moved to the app menu on macOS).
+    QMenu *addSettingsMenu(QMenuBar *bar);
     void showAbout();
     void bringAllToFront();
 

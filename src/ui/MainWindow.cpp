@@ -242,11 +242,8 @@ void MainWindow::buildMenus()
     QAction *quit = file->addAction(tr("&Quit"), QKeySequence::Quit, &app, &AppController::quit);
     quit->setMenuRole(QAction::QuitRole);
 
-    // Edit
-    QMenu *edit = bar->addMenu(tr("&Edit"));
-    QAction *preferences = edit->addAction(tr("Preferences…"), QKeySequence(Qt::CTRL | Qt::Key_Comma), &app,
-                                           &AppController::showPreferences);
-    preferences->setMenuRole(QAction::PreferencesRole);
+    // Settings (one entry per Preferences tab, like ares)
+    app.addSettingsMenu(bar);
 
     // Emulation
     QMenu *emulation = bar->addMenu(tr("E&mulation"));

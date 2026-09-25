@@ -65,14 +65,19 @@ PreferencesDialog::PreferencesDialog(QWidget *parent)
     : QDialog(parent)
 {
     setWindowTitle(tr("Preferences"));
-    auto *tabs = new QTabWidget;
-    tabs->addTab(createEmulationTab(), tr("Emulation"));
-    tabs->addTab(createVideoTab(), tr("Video"));
-    tabs->addTab(createAudioTab(), tr("Audio"));
-    tabs->addTab(createControlsTab(), tr("Controls"));
+    m_tabs = new QTabWidget;
+    m_tabs->addTab(createEmulationTab(), tr("Emulation"));
+    m_tabs->addTab(createVideoTab(), tr("Video"));
+    m_tabs->addTab(createAudioTab(), tr("Audio"));
+    m_tabs->addTab(createControlsTab(), tr("Controls"));
     auto *layout = new QVBoxLayout(this);
-    layout->addWidget(tabs);
+    layout->addWidget(m_tabs);
     m_debounce.start();
+}
+
+void PreferencesDialog::setCurrentTab(Tab tab)
+{
+    m_tabs->setCurrentIndex(int(tab));
 }
 
 // MARK: - Binding helpers (GBPreferenceButton / GBPreferencePopUpButton / GBPreferencesSlider)
