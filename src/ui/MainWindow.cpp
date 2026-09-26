@@ -122,6 +122,7 @@ MainWindow::MainWindow(const QString &path, QWidget *parent)
     connect(m_session, &EmulatorSession::printerImage, this, [this](const QImage &image) {
         if (!m_printerWindow) {
             m_printerWindow = new PrinterWindow(m_session);
+            adoptToolWindow(m_printerWindow);
             m_printerWindow->setWindowTitle(tr("Printer – %1").arg(m_session->displayName()));
         }
         m_printerWindow->appendImage(image); // Starts a new feed if the window was hidden
@@ -140,6 +141,18 @@ MainWindow::MainWindow(const QString &path, QWidget *parent)
 
     buildMenus();
     updateTitle();
+
+    // Pause / mute when inactive. Focus hand-offs between our own windows
+    // briefly pass through "no focus", so evaluate after a short debounce.
+    m_focusTimer = new QTimer(this);
+    m_focusTimer->setSingleShot(true);
+    m_focusTimer->setInterval(150);
+    connect(m_focusTimer, &QTimer::timeout, this, [this] { updateInactiveState(false); });
+    connect(qApp, &QGuiApplication::focusWindowChanged, m_focusTimer, qOverload<>(&QTimer::start));
+    for (const char *key : {"GBPauseWhenInactive", "GBMuteWhenInactive"}) {
+        Settings::instance().observe(
+            this, QString::fromLatin1(key), [this](const QVariant &) { updateInactiveState(true); }, false);
+    }
 
     // Restore the last window size (Document.m LastWindowWidth/Height)
     Settings &settings = Settings::instance();
@@ -570,6 +583,7 @@ void MainWindow::reset(EmulatedModel model)
 
 void MainWindow::togglePause()
 {
+    m_pausedForInactivity = false; // An explicit choice overrides automatic resume
     m_session->togglePause();
 }
 
@@ -906,6 +920,7 @@ DebuggerConsole *MainWindow::console()
 {
     if (!m_console) {
         m_console = new DebuggerConsole(m_session);
+        adoptToolWindow(m_console);
         m_console->setWindowTitle(tr("Debug Console – %1").arg(m_session->displayName()));
         connect(m_console, &DebuggerConsole::visibilityChanged, this, &MainWindow::updateMouseHiding);
     }
@@ -923,6 +938,7 @@ void MainWindow::showMemory()
 {
     if (!m_memoryViewer) {
         m_memoryViewer = new MemoryViewer(m_session);
+        adoptToolWindow(m_memoryViewer);
         m_memoryViewer->setWindowTitle(tr("Memory – %1").arg(m_session->displayName()));
     }
     m_memoryViewer->show();
@@ -935,6 +951,7 @@ void MainWindow::showVRAMViewer()
 {
     if (!m_vramViewer) {
         m_vramViewer = new VramViewer(m_session);
+        adoptToolWindow(m_vramViewer);
         m_vramViewer->setWindowTitle(tr("VRAM Viewer – %1").arg(m_session->displayName()));
     }
     m_vramViewer->show();
@@ -947,6 +964,7 @@ CheatsWindow *MainWindow::cheatsWindow()
 {
     if (!m_cheatsWindow) {
         m_cheatsWindow = new CheatsWindow(m_session);
+        adoptToolWindow(m_cheatsWindow);
         m_cheatsWindow->setWindowTitle(tr("Cheats – %1").arg(m_session->displayName()));
     }
     return m_cheatsWindow;
@@ -964,6 +982,7 @@ void MainWindow::showCheatSearch()
 {
     if (!m_cheatSearchWindow) {
         m_cheatSearchWindow = new CheatSearchWindow(m_session);
+        adoptToolWindow(m_cheatSearchWindow);
         m_cheatSearchWindow->setWindowTitle(tr("Cheat Search – %1").arg(m_session->displayName()));
         connect(m_cheatSearchWindow, &CheatSearchWindow::cheatAdded, this, [this](int row) {
             showCheats();
@@ -982,4 +1001,65 @@ void MainWindow::showPrinterWindow()
         m_printerWindow->show();
     }
     updateMouseHiding();
+}
+
+// MARK: - Pause / mute when inactive
+
+void MainWindow::adoptToolWindow(QWidget *window)
+{
+    // Lets focus tracking treat this game's tool windows as part of it.
+    window->setProperty("sameboyOwner", QVariant::fromValue<QObject *>(this));
+}
+
+bool MainWindow::isSessionFocused() const
+{
+    QWidget *active = QApplication::activeWindow();
+    if (!active) {
+        return false; // Another application
+    }
+    auto belongsToUs = [this](const QObject *window) {
+        if (window == this) {
+            return true;
+        }
+        // The link-cable partner runs in lockstep with us.
+        const auto *other = qobject_cast<const MainWindow *>(window);
+        return other && m_session->partner() && other->session() == m_session->partner();
+    };
+    if (qobject_cast<MainWindow *>(active)) {
+        return belongsToUs(active);
+    }
+    if (const QObject *owner = active->property("sameboyOwner").value<QObject *>()) {
+        return belongsToUs(owner);
+    }
+    return true; // Preferences, palette editor, file dialogs, message boxes…
+}
+
+void MainWindow::updateInactiveState(bool force)
+{
+    const bool inactive = !isSessionFocused();
+    if (inactive == m_inactive && !force) {
+        return;
+    }
+    m_inactive = inactive;
+    if (m_session->isGBS()) {
+        return; // Music playback carries on in the background
+    }
+    Settings &settings = Settings::instance();
+    m_session->setInactiveMuted(inactive && settings.boolValue(QStringLiteral("GBMuteWhenInactive")));
+
+    if (inactive && settings.boolValue(QStringLiteral("GBPauseWhenInactive"))) {
+        if (!m_session->isPaused()) {
+            m_session->stop();
+            m_pausedForInactivity = true;
+        }
+    }
+    else if (!inactive && m_pausedForInactivity) {
+        m_pausedForInactivity = false;
+        m_session->start();
+    }
+    else if (!settings.boolValue(QStringLiteral("GBPauseWhenInactive")) && m_pausedForInactivity) {
+        // Option turned off while paused for inactivity: resume.
+        m_pausedForInactivity = false;
+        m_session->start();
+    }
 }

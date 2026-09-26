@@ -58,7 +58,8 @@ Toolchain: Qt 6.11, SDL3, rgbds (boot ROMs and the test ROM), GCC. The build mus
 - **Real UI check (GL included):** start `Xvfb :99 -screen 0 1280x1024x24 +extension GLX &`, then run with `DISPLAY=:99 QT_QPA_PLATFORM=xcb LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIO_DRIVER=dummy XDG_CONFIG_HOME=<scratch>`. Developer hooks in `main.cpp`:
   - `SAMEBOY_QT_TRIGGER="Show Memory;Video"` triggers menu items by title (with `&` and `…` stripped) after 1 s.
   - `SAMEBOY_QT_GRAB=<prefix>:<ms>` saves every visible top-level window, and every tab of a `QTabWidget`, as PNGs, then quits.
-  - `SAMEBOY_QT_SOFTWARE_RENDERER=1` forces the non-GL renderer.
+  - `SAMEBOY_QT_SOFTWARE_RENDERER=1` forces the non-GL renderer (the tests set it, since the offscreen platform has no OpenGL).
+  - `SAMEBOY_QT_VIRTUAL_GAMEPAD=1` attaches an SDL virtual gamepad, to check controller UI without hardware. Tests can drive one directly (see `virtualControllerBinding`).
 
   Don't screenshot the user's real desktop. Kill Xvfb when done. `pkill` returns 144; append `; true` if it ends a command chain.
 - **Test ROMs:** dmg-acid2 and cgb-acid2 (MIT, from GitHub releases) are good visual references. Download them into the scratchpad, not the repo.
@@ -91,6 +92,7 @@ Each `EmulatorSession` runs `GB_run` on its own `std::thread`, as in Document.m.
 - **Mutating core state from the GUI:** use `performAtomic(block)`. It runs between `GB_run` steps, or inline when the session is stopped or at the debugger prompt.
 - **Capturing log output:** `captureOutput(block)`, for example around `GB_debugger_evaluate`.
 - **Core callbacks run on the emulation thread.** They must never block on the GUI thread, because `stop()` joins the thread. Use `QMetaObject::invokeMethod(..., Qt::QueuedConnection)`.
+- **Focus / inactivity:** `MainWindow::isSessionFocused()` treats the window, its tool windows (tagged by `adoptToolWindow`, i.e. the `sameboyOwner` property), the link partner and app dialogs as focused. Give new tool windows `adoptToolWindow()`.
 - **Emulation-thread code must not read `Settings` (QSettings).** Cache the values in atomics through `Settings::observe` instead (see `m_borderMode`).
 - **Frame buffers:** three buffers, always 256×224, so border changes never reallocate. `InputController::frameHook` runs on the emulation thread each frame; it drives rapid fire and slow-motion, as GBView's `-flip` does.
 - **Link cable:** the master session runs both cores on its thread, and the slave's start/stop delegates to the master.
@@ -125,11 +127,7 @@ Each `EmulatorSession` runs `GB_run` on its own `std::thread`, as in Document.m.
 ## OpenSpec
 
 - Specs live in `openspec/`, and the project context is in `openspec/config.yaml`. Slash commands are `/opsx:propose`, `/opsx:apply` and `/opsx:archive`, and there are skills in `.claude/skills/`.
-- The initial change `openspec/changes/add-qt-frontend` holds all 12 capability specs, but it is **not archived yet**. Its unchecked tasks need things the sandbox can't provide:
-  - `nix build`;
-  - a physical controller and audible audio;
-  - camera, printer, MBC7 or alarm ROMs;
-  - the `.sbp` round trip.
-
-  Archive it (which creates `openspec/specs/`) once the user confirms those.
-- **Making changes:** new behavior should get its own change (`openspec new change <name>`). Until the initial change is archived, small tweaks to its scope have been folded into its delta specs and tasks. Keep them valid with `openspec validate add-qt-frontend --strict`.
+- The baseline specs live in `openspec/specs/` (12 capabilities, from the archived `add-qt-frontend`).
+- `verify-hardware-features` (tasks only, `skip_specs`) tracks checks that need ROMs or peripherals the sandbox lacks: alarms, MBC7, Workboy typing, `.sbp` round trip, printer, camera.
+- **Making changes:** new behavior gets its own change (`openspec new change <name>`) with delta specs against `openspec/specs/`. Validate with `openspec validate --all --strict`, and archive once the user has confirmed any manual checks.
+- **Avoid parallel conflicts:** two open changes shouldn't both MODIFY the same requirement. Archiving the first would make the second's copy stale.

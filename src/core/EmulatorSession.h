@@ -95,8 +95,11 @@ public:
     void showOSD(const QString &text) { emit osdMessage(text); }
 
     // Audio
-    void setMuted(bool muted);
+    void setMuted(bool muted); // Persistent (Emulation → Mute Sound)
     bool isMuted() const;
+    // Temporary silence while the window is inactive; never persisted.
+    void setInactiveMuted(bool muted);
+    bool isAudioPlaying() const { return m_audioPlaying; }
     bool isRecordingAudio() const { return m_recordingAudio; }
     int startAudioRecording(const QString &path, GB_audio_format_t format);
     int stopAudioRecording();
@@ -250,6 +253,10 @@ private:
     std::unique_ptr<AudioOutput> m_audio;
     std::mutex m_audioClientMutex;
     std::atomic<bool> m_audioPlaying{false};
+    std::atomic<bool> m_userMuted{false}; // Cached "Mute" setting (read on the emulation thread)
+    std::atomic<bool> m_inactiveMuted{false};
+    bool shouldPlayAudio() const;
+    void applyAudioState();
     std::mutex m_audioMutex;
     std::condition_variable m_audioCondition;
     std::vector<GB_sample_t> m_audioBuffer;

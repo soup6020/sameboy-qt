@@ -240,6 +240,7 @@ void EmulatorSession::initCommon()
         m_frameBlendingMode = value.toInt();
         emit frameReady();
     });
+    settings.observe(this, QStringLiteral("Mute"), [this](const QVariant &value) { m_userMuted = value.toBool(); });
     settings.observe(this, QStringLiteral("GBVolume"), [this](const QVariant &value) { m_volume = value.toDouble(); });
     for (const char *key : {"GBColorPalette", "GBCurrentTheme", "GBThemes"}) {
         settings.observe(this, QString::fromLatin1(key), [this](const QVariant &) { updatePalette(); }, false);
@@ -595,7 +596,7 @@ void EmulatorSession::preRun()
     m_emulationThreadId = std::this_thread::get_id();
     GB_set_pixels_output(m_gb, m_buffers[(m_currentBuffer + 1) % 3].get());
     GB_set_sample_rate(m_gb, kSampleRate);
-    if (!Settings::instance().boolValue(QStringLiteral("Mute")) || m_isGBS) {
+    if (shouldPlayAudio()) {
         startAudio();
     }
     // Clear pending alarms, don't play alarms while playing
@@ -952,29 +953,69 @@ void EmulatorSession::renderAudio(unsigned sampleRate, unsigned frames, GB_sampl
     }
 }
 
+bool EmulatorSession::shouldPlayAudio() const
+{
+    // GBS playback ignores both mutes when starting, like Cocoa's GBS player.
+    return m_isGBS || (!m_userMuted && !m_inactiveMuted);
+}
+
+void EmulatorSession::applyAudioState()
+{
+    if (!(m_running || (m_master && m_master->m_running))) {
+        return; // preRun() applies it when emulation starts
+    }
+    if (shouldPlayAudio()) {
+        startAudio();
+    }
+    else {
+        std::lock_guard lock(m_audioClientMutex);
+        if (m_audio) {
+            m_audio->stop();
+        }
+        m_audioPlaying = false;
+    }
+}
+
 bool EmulatorSession::isMuted() const
 {
-    if (m_running || m_master) {
+    // What the Mute Sound checkmark shows: the user's choice, not inactivity.
+    if (m_isGBS && (m_running || m_master)) {
         return !m_audioPlaying;
     }
-    return Settings::instance().boolValue(QStringLiteral("Mute"));
+    return m_userMuted;
 }
 
 void EmulatorSession::setMuted(bool muted)
 {
-    if (m_running || (m_master && m_master->m_running)) {
-        if (muted) {
-            std::lock_guard lock(m_audioClientMutex);
-            if (m_audio) {
-                m_audio->stop();
+    m_userMuted = muted;
+    if (m_isGBS) {
+        // The GBS player toggles its own output directly.
+        if (m_running) {
+            if (muted) {
+                std::lock_guard lock(m_audioClientMutex);
+                if (m_audio) {
+                    m_audio->stop();
+                }
+                m_audioPlaying = false;
             }
-            m_audioPlaying = false;
-        }
-        else {
-            startAudio();
+            else {
+                startAudio();
+            }
         }
     }
+    else {
+        applyAudioState();
+    }
     Settings::instance().setValue(QStringLiteral("Mute"), muted);
+}
+
+void EmulatorSession::setInactiveMuted(bool muted)
+{
+    if (m_isGBS || m_inactiveMuted == muted) {
+        return; // Music playback keeps playing in the background
+    }
+    m_inactiveMuted = muted;
+    applyAudioState();
 }
 
 int EmulatorSession::startAudioRecording(const QString &path, GB_audio_format_t format)

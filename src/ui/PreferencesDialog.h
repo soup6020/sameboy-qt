@@ -34,6 +34,7 @@ public:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
 
 private:
@@ -57,6 +58,13 @@ private:
 
     // Controls
     void reloadControlsTable();
+    void refreshControllerMenu(bool preferPlayersController);
+    QString selectedControllerId() const;
+    QString selectedControllerName() const;
+    bool isCellBindable(int row, int column) const;
+    void beginCapture(int row, int column);
+    void cancelCapture();
+    void clearBinding(int row, int column);
     unsigned usesForKey(int key) const;
     void refreshJoypadMenu();
     void advanceConfigurationStateMachine();
@@ -73,7 +81,10 @@ private:
 
     QComboBox *m_playerButton = nullptr;
     QTableWidget *m_controlsTable = nullptr;
-    int m_buttonBeingModified = -1;
+    QComboBox *m_controllerButton = nullptr;
+    QPushButton *m_resetControllerButton = nullptr;
+    int m_captureRow = -1; // Cell waiting for a key / controller input
+    int m_captureColumn = -1; // 1 = keyboard, 2 = controller
     QPushButton *m_configureButton = nullptr;
     QPushButton *m_skipButton = nullptr;
     QComboBox *m_preferredJoypadButton = nullptr;

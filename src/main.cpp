@@ -118,6 +118,18 @@ int main(int argc, char **argv)
         // Start idle, showing the SDL frontend's logo, rather than with an open panel.
         controller.showWelcome();
     }
+    // Developer hook: SAMEBOY_QT_VIRTUAL_GAMEPAD=1 attaches an SDL virtual gamepad,
+    // so controller UI can be checked without hardware.
+    if (qEnvironmentVariableIsSet("SAMEBOY_QT_VIRTUAL_GAMEPAD")) {
+        SDL_VirtualJoystickDesc desc;
+        SDL_INIT_INTERFACE(&desc);
+        desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
+        desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
+        desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
+        desc.name = "SameBoy Virtual Gamepad";
+        SDL_AttachVirtualJoystick(&desc);
+    }
+
     // Developer hook for automated UI checks: SAMEBOY_QT_TRIGGER="Show Console;Show Memory"
     // triggers menu items (by title, without mnemonics or ellipses) of the first window after 1 s.
     const QString triggers = qEnvironmentVariable("SAMEBOY_QT_TRIGGER");

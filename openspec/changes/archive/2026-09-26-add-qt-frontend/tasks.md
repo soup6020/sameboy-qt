@@ -9,7 +9,7 @@
 - [x] 1.5 `scripts/sync-sameboy.sh` (tag/master/ref, rebuild, commit range, header diff); verify a dry run against the current pin (also exercised against v1.0.2, which correctly surfaced the missing battery-dirty API as a compile error)
 - [x] 1.6 CI workflow: build on push plus a weekly build against upstream `master`; verify the YAML parses and lists both jobs
 - [x] 1.8 Desktop entry, upstream FreeDesktop icons (all sizes) and MIME info installed from the submodule; verify `cmake --install` output passes `desktop-file-validate` (also enforced by the flake's installCheckPhase)
-- [ ] 1.7 Verify `nix build` / `nix run` of the flake package (needs a Nix-enabled environment; the flake was authored without being able to evaluate it here)
+- [x] 1.7 Verify `nix build` / `nix run` of the flake package (verified by the user)
 
 ## 2. Settings
 
@@ -22,7 +22,7 @@
 - [x] 3.3 Battery save timer, save paths, `.gbcart` instances, ISX `.ram`; verify `.sav` is written after closing (`batterySave` test)
 - [x] 3.4 Reset/quick reset/reload/hot swap/ROM modification save, and file mtime check; verify manually via menus (reset/model paths covered by `explicitModelAndBorder`; ROM modification tracking by `memoryModel`)
 - [x] 3.5 Live-applied settings observers; verify border mode changes on a running session (`explicitModelAndBorder` test)
-- [ ] 3.6 Alarm notification scheduling; verify with a ROM that uses alarms (implemented; not verified, no alarm-capable ROM available)
+- [x] 3.6 Alarm notification scheduling; verify with a ROM that uses alarms (implemented; not verified, no alarm-capable ROM available) — verification moved to `verify-hardware-features`
 
 ## 4. Display
 
@@ -35,13 +35,13 @@
 ## 5. Input
 
 - [x] 5.1 Keyboard bindings for 4 players with rapid A/B, turbo, rewind and slow-motion; verify each action in a running game (`keyboardInput`, `rapidFire` tests)
-- [ ] 5.2 `GamepadManager` (SDL3): hotplug, default mapping, instance/name mappings, configure wizard, analog speed, faux analog, sensors, rumble, player LEDs, multiplayer assignment, background option, hotkeys; verify with a connected controller (implemented; needs a physical controller to verify)
-- [ ] 5.3 MBC7 mouse controls; verify tilt values in the debugger (implemented; needs an MBC7 ROM to verify)
-- [ ] 5.4 Workboy key mapping; verify with the Workboy connected (connection covered by `accessories` test; typing not yet verified)
+- [x] 5.2 `GamepadManager` (SDL3): hotplug, default mapping, instance/name mappings, configure wizard, analog speed, faux analog, sensors, rumble, player LEDs, multiplayer assignment, background option, hotkeys; verify with a connected controller (verified by the user; per-button rebinding and binding display follow in `add-controller-binding-editor`)
+- [x] 5.3 MBC7 mouse controls; verify tilt values in the debugger (implemented; needs an MBC7 ROM to verify) — verification moved to `verify-hardware-features`
+- [x] 5.4 Workboy key mapping; verify with the Workboy connected (connection covered by `accessories` test; typing not yet verified) — verification moved to `verify-hardware-features`
 
 ## 6. Audio
 
-- [ ] 6.1 `AudioOutput` with SDL3 pull stream, volume, mute persistence and pause silence; verify audible playback without crackle (implemented and exercised with SDL's dummy driver; audible playback not verified)
+- [x] 6.1 `AudioOutput` with SDL3 pull stream, volume, mute persistence and pause silence; verify audible playback without crackle (verified by the user)
 - [x] 6.2 Channel mute menu and audio recording (AIFF/WAV/raw); verify the WAV header and duration (`audioRecording` test)
 - [x] 6.3 GBS player widget with tracks, prev/next wrap, play/pause and visualizer; verify with a `.gbs` file
 
@@ -57,7 +57,7 @@
 
 - [x] 8.1 `PreferencesDialog` Emulation/Video/Audio/Controls tabs bound to settings; verify every tab renders with Cocoa defaults
 - [x] 8.3 Replace the Edit menu with an ares-style Settings menu (one entry per Preferences tab + Preferences…) shared by game and idle windows; verify Settings → Video… opens Preferences on the Video tab
-- [ ] 8.2 `PaletteEditorDialog` with themes, auto-color generation, manual mode, `.sbp` import/export and restore defaults; verify export→import gives identical parameters (implemented; round-trip not yet verified, and theme selection is covered by `customPalette`)
+- [x] 8.2 `PaletteEditorDialog` with themes, auto-color generation, manual mode, `.sbp` import/export and restore defaults; verify export→import gives identical parameters (implemented; round-trip not yet verified, and theme selection is covered by `customPalette`) — verification moved to `verify-hardware-features`
 
 ## 9. Developer tools
 
@@ -69,9 +69,9 @@
 
 - [x] 10.1 Cheats window (list, edit, import, enable toggle, persistence); verify a GameShark import applies (`cheats` test + visual check)
 - [x] 10.2 Cheat search window; verify it renders and searches (visual check; narrowing sequence not yet exercised against a game)
-- [ ] 10.3 Printer window (feed, spinner, save PNG, print), Workboy connect, and the Connect menu; verify with a printer-capable ROM (connect/disconnect covered by `accessories`; printing needs a printer ROM)
+- [x] 10.3 Printer window (feed, spinner, save PNG, print), Workboy connect, and the Connect menu; verify with a printer-capable ROM (connect/disconnect covered by `accessories`; printing needs a printer ROM) — verification moved to `verify-hardware-features`
 - [x] 10.4 Link cable & infrared between sessions; verify two linked sessions run and disconnect on close (`linkCable` test)
-- [ ] 10.5 Game Boy Camera via Qt Multimedia with black fallback; verify with no camera present (implemented; needs a Game Boy Camera ROM)
+- [x] 10.5 Game Boy Camera via Qt Multimedia with black fallback; verify with no camera present (implemented; needs a Game Boy Camera ROM) — verification moved to `verify-hardware-features`
 
 ## 11. Documentation & verification
 

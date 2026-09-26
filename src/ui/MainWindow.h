@@ -4,6 +4,7 @@
 
 #include <QMainWindow>
 #include <QPointer>
+#include <QTimer>
 
 class EmulatorSession;
 class InputController;
@@ -86,6 +87,9 @@ private:
     void showPrinterWindow();
     void populateLinkMenu();
     void showWarning(const QString &text);
+    void adoptToolWindow(QWidget *window);
+    bool isSessionFocused() const;
+    void updateInactiveState(bool force);
 
     EmulatorSession *m_session;
     InputController *m_input = nullptr;
@@ -124,4 +128,9 @@ private:
     QActionGroup *m_modelGroup = nullptr;
     QList<QAction *> m_modelActions;
     bool m_warningShown = false;
+
+    // Pause / mute when inactive
+    QTimer *m_focusTimer = nullptr;
+    bool m_inactive = false;
+    bool m_pausedForInactivity = false;
 };

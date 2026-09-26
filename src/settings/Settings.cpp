@@ -127,6 +127,10 @@ void Settings::registerDefaults()
     d["Mute"] = false;
     d["DeveloperMode"] = false;
     d["GBWorkboyTimeOffset"] = 0;
+
+    // Qt-only additions (no Cocoa equivalent).
+    d["GBPauseWhenInactive"] = false;
+    d["GBMuteWhenInactive"] = false;
 }
 
 QVariant Settings::value(const QString &key) const

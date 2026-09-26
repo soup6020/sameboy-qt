@@ -65,6 +65,19 @@ public:
     // mapping when the controller has none configured.
     GamepadAction actionFor(const Controller &controller, const QString &inputId) const;
     bool hasCustomMapping(const Controller &controller) const;
+
+    // Binding editor support. A mapping is {inputId: int(GamepadAction)} plus
+    // optional "AnalogTurbo"/"AnalogUnderclock" axis ids.
+    static QVariantMap defaultMapping();
+    static QVariantMap storedMapping(const QString &uniqueId, const QString &name); // Empty if none
+    static QVariantMap mappingForEditing(const QString &uniqueId, const QString &name); // Stored, else defaults
+    static void setMapping(const QString &uniqueId, const QString &name, const QVariantMap &mapping);
+    static void resetMapping(const QString &uniqueId, const QString &name);
+    static QStringList inputsForAction(const QVariantMap &mapping, GamepadAction action);
+    static QVariantMap bindInput(QVariantMap mapping, const QString &inputId, GamepadAction action);
+    static QVariantMap clearAction(QVariantMap mapping, GamepadAction action);
+    static QString genericInputName(const QString &inputId);
+    QString inputDisplayName(const QString &uniqueId, const QString &inputId) const;
     QString analogTurboAxis(const Controller &controller) const;
     QString analogUnderclockAxis(const Controller &controller) const;
 

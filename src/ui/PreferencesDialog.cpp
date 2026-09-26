@@ -15,9 +15,12 @@
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QMenu>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSlider>
 #include <QSpinBox>
+#include <QTabBar>
 #include <QTabWidget>
 #include <QTableWidget>
 
@@ -65,13 +68,27 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) : QDialog(parent)
 {
     setWindowTitle(tr("Preferences"));
     m_tabs = new QTabWidget;
-    m_tabs->addTab(createEmulationTab(), tr("Emulation"));
-    m_tabs->addTab(createVideoTab(), tr("Video"));
-    m_tabs->addTab(createAudioTab(), tr("Audio"));
-    m_tabs->addTab(createControlsTab(), tr("Controls"));
+    // Each tab scrolls instead of squashing its widgets when a tiling window
+    // manager forces the dialog below its natural size.
+    QSize natural;
+    auto addScrollingTab = [&](QWidget *page, const QString &title) {
+        auto *scroll = new QScrollArea;
+        scroll->setWidget(page);
+        scroll->setWidgetResizable(true);
+        scroll->setFrameShape(QFrame::NoFrame);
+        natural = natural.expandedTo(page->sizeHint());
+        m_tabs->addTab(scroll, title);
+    };
+    addScrollingTab(createEmulationTab(), tr("Emulation"));
+    addScrollingTab(createVideoTab(), tr("Video"));
+    addScrollingTab(createAudioTab(), tr("Audio"));
+    addScrollingTab(createControlsTab(), tr("Controls"));
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(m_tabs);
     m_debounce.start();
+    // Open at the size the largest tab needs, as before (scroll areas alone
+    // would report a smaller size hint).
+    resize(natural + QSize(40, m_tabs->tabBar()->sizeHint().height() + 40));
 }
 
 void PreferencesDialog::setCurrentTab(Tab tab)
@@ -226,6 +243,8 @@ QWidget *PreferencesDialog::createEmulationTab()
     turboRow->addWidget(m_turboCapSlider, 1);
     turboRow->addWidget(m_turboCapLabel);
     form->addRow(turboRow);
+    form->addRow(
+        checkBox(tr("Pause when inactive"), QStringLiteral("GBPauseWhenInactive"))); // Aligned with the turbo cap
     return page;
 }
 
@@ -403,6 +422,7 @@ QWidget *PreferencesDialog::createAudioTab()
                            {tr("Accurate (Emulate hardware)"), int(GB_HIGHPASS_ACCURATE)},
                            {tr("Preserve waveform"), int(GB_HIGHPASS_REMOVE_DC_OFFSET)}}));
     form->addRow(tr("Interference volume:"), slider(QStringLiteral("GBInterferenceVolume"), 0, 256, 256));
+    form->addRow(QString(), checkBox(tr("Mute when inactive"), QStringLiteral("GBMuteWhenInactive")));
     return page;
 }
 
@@ -415,31 +435,58 @@ QWidget *PreferencesDialog::createControlsTab()
 
     m_playerButton = new QComboBox;
     m_playerButton->addItems({tr("Player 1"), tr("Player 2"), tr("Player 3"), tr("Player 4")});
-    auto *playerRow = new QHBoxLayout;
-    playerRow->addWidget(new QLabel(tr("Control settings for")));
-    playerRow->addWidget(m_playerButton);
-    playerRow->addStretch();
-    layout->addLayout(playerRow);
+    m_controllerButton = new QComboBox;
+    m_controllerButton->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    m_resetControllerButton = new QPushButton(tr("Reset to Defaults"));
+    auto *selectorRow = new QHBoxLayout;
+    selectorRow->addWidget(new QLabel(tr("Control settings for")));
+    selectorRow->addWidget(m_playerButton);
+    selectorRow->addSpacing(12);
+    selectorRow->addWidget(new QLabel(tr("Controller:")));
+    selectorRow->addWidget(m_controllerButton, 1);
+    selectorRow->addWidget(m_resetControllerButton);
+    layout->addLayout(selectorRow);
 
-    m_controlsTable = new QTableWidget(0, 2);
-    m_controlsTable->setHorizontalHeaderLabels({tr("Action"), tr("Key")});
+    // Action | Keyboard | Controller; cells are selected individually so
+    // Delete clears exactly one binding.
+    m_controlsTable = new QTableWidget(0, 3);
+    m_controlsTable->setHorizontalHeaderLabels({tr("Action"), tr("Keyboard"), tr("Controller")});
     m_controlsTable->verticalHeader()->hide();
     m_controlsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    m_controlsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_controlsTable->setSelectionBehavior(QAbstractItemView::SelectItems);
     m_controlsTable->setSelectionMode(QAbstractItemView::SingleSelection);
     m_controlsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    connect(m_controlsTable, &QTableWidget::cellDoubleClicked, this, [this](int row) {
-        m_buttonBeingModified = row;
-        m_controlsTable->setEnabled(false);
-        m_playerButton->setEnabled(false);
-        reloadControlsTable();
-        setFocus();
+    m_controlsTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_controlsTable->setMinimumHeight(340);
+    m_controlsTable->installEventFilter(this);
+    connect(m_controlsTable, &QTableWidget::cellDoubleClicked, this, &PreferencesDialog::beginCapture);
+    connect(m_controlsTable, &QTableWidget::customContextMenuRequested, this, [this](const QPoint &position) {
+        const QModelIndex index = m_controlsTable->indexAt(position);
+        if (!index.isValid() || !isCellBindable(index.row(), index.column())) {
+            return;
+        }
+        QMenu menu;
+        menu.addAction(tr("Change Binding…"), this, [this, index] { beginCapture(index.row(), index.column()); });
+        menu.addAction(tr("Clear Binding"), this, [this, index] { clearBinding(index.row(), index.column()); });
+        menu.exec(m_controlsTable->viewport()->mapToGlobal(position));
     });
-    layout->addWidget(new QLabel(tr("Double-click a row, then press the new key.")));
+    layout->addWidget(new QLabel(tr("Double-click a cell, then press a key or controller button. "
+                                    "Delete clears a binding, Esc cancels.")));
     layout->addWidget(m_controlsTable, 1);
     connect(m_playerButton, &QComboBox::currentIndexChanged, this, [this] {
+        refreshControllerMenu(true);
         reloadControlsTable();
         refreshJoypadMenu();
+    });
+    connect(m_controllerButton, &QComboBox::currentIndexChanged, this, [this] {
+        cancelCapture();
+        reloadControlsTable();
+    });
+    connect(m_resetControllerButton, &QPushButton::clicked, this, [this] {
+        const QString uniqueId = selectedControllerId();
+        if (!uniqueId.isEmpty()) {
+            GamepadManager::resetMapping(uniqueId, selectedControllerName());
+        }
     });
 
     auto *controllers = new QGroupBox(tr("Controllers"));
@@ -448,6 +495,7 @@ QWidget *PreferencesDialog::createControlsTab()
     m_skipButton = new QPushButton(tr("Skip"));
     m_skipButton->setEnabled(false);
     connect(m_configureButton, &QPushButton::clicked, this, [this] {
+        cancelCapture();
         m_configureButton->setEnabled(false);
         m_skipButton->setEnabled(true);
         m_joystickBeingConfigured.clear();
@@ -472,6 +520,7 @@ QWidget *PreferencesDialog::createControlsTab()
             defaults[player] = id;
         }
         settings.setValue(QStringLiteral("JoyKitDefaultControllers"), defaults);
+        refreshControllerMenu(true);
     });
     form->addRow(tr("Controller for multiplayer games:"), m_preferredJoypadButton);
 
@@ -495,21 +544,85 @@ QWidget *PreferencesDialog::createControlsTab()
     layout->addWidget(controllers);
 
     GamepadManager &gamepads = GamepadManager::instance();
-    connect(&gamepads, &GamepadManager::controllerConnected, this, &PreferencesDialog::refreshJoypadMenu);
-    connect(&gamepads, &GamepadManager::controllerDisconnected, this, &PreferencesDialog::refreshJoypadMenu);
+    auto hotplug = [this] {
+        refreshControllerMenu(false);
+        refreshJoypadMenu();
+        reloadControlsTable();
+    };
+    connect(&gamepads, &GamepadManager::controllerConnected, this, hotplug);
+    connect(&gamepads, &GamepadManager::controllerDisconnected, this, hotplug);
     connect(&gamepads, &GamepadManager::rawInput, this,
             [this](const QString &uniqueId, const QString &inputId, bool pressed, double) {
                 controllerInput(uniqueId, inputId, pressed);
             });
+    // Keyboard bindings and controller mappings (from the wizard, the editor
+    // or elsewhere) all land in Settings; refresh whenever they change.
     connect(&Settings::instance(), &Settings::changed, this, [this](const QString &key) {
-        if (key.startsWith(QLatin1String("GB")) && m_buttonBeingModified < 0) {
+        if ((key.startsWith(QLatin1String("GB")) || key.startsWith(QLatin1String("JoyKit"))) && m_captureRow < 0) {
             reloadControlsTable();
         }
     });
 
+    refreshControllerMenu(true);
     reloadControlsTable();
     refreshJoypadMenu();
     return page;
+}
+
+// MARK: - Controls table
+
+QString PreferencesDialog::selectedControllerId() const
+{
+    return m_controllerButton->currentData().toString();
+}
+
+QString PreferencesDialog::selectedControllerName() const
+{
+    return m_controllerButton->currentData(Qt::UserRole + 1).toString();
+}
+
+void PreferencesDialog::refreshControllerMenu(bool preferPlayersController)
+{
+    // Controller column follows this selector, not the player: mappings belong
+    // to controllers. Default to the selected player's preferred controller.
+    const QString previous = selectedControllerId();
+    const QString preferred = Settings::instance()
+                                  .mapValue(QStringLiteral("JoyKitDefaultControllers"))
+                                  .value(QString::number(m_playerButton->currentIndex(), 16))
+                                  .toString();
+    QSignalBlocker blocker(m_controllerButton);
+    m_controllerButton->clear();
+    for (const auto *controller : GamepadManager::instance().controllers()) {
+        m_controllerButton->addItem(controller->name, controller->uniqueId);
+        m_controllerButton->setItemData(m_controllerButton->count() - 1, controller->name, Qt::UserRole + 1);
+        m_controllerButton->setItemData(m_controllerButton->count() - 1, controller->uniqueId, Qt::ToolTipRole);
+    }
+    if (m_controllerButton->count() == 0) {
+        m_controllerButton->addItem(tr("No controllers connected"), QString());
+    }
+    int index = -1;
+    if (preferPlayersController && !preferred.isEmpty()) {
+        index = m_controllerButton->findData(preferred);
+    }
+    if (index < 0 && !previous.isEmpty()) {
+        index = m_controllerButton->findData(previous);
+    }
+    m_controllerButton->setCurrentIndex(qMax(0, index));
+    m_controllerButton->setEnabled(!selectedControllerId().isEmpty());
+    m_resetControllerButton->setEnabled(!selectedControllerId().isEmpty());
+}
+
+bool PreferencesDialog::isCellBindable(int row, int column) const
+{
+    if (column == 1) {
+        const int count =
+            m_playerButton->currentIndex() == 0 ? int(GBButton::KeyboardCount) : int(GBButton::PerPlayerCount);
+        return row < count;
+    }
+    if (column == 2) {
+        return !selectedControllerId().isEmpty();
+    }
+    return false;
 }
 
 unsigned PreferencesDialog::usesForKey(int key) const
@@ -530,42 +643,165 @@ unsigned PreferencesDialog::usesForKey(int key) const
 void PreferencesDialog::reloadControlsTable()
 {
     const unsigned player = unsigned(m_playerButton->currentIndex());
-    const int rows = player == 0 ? int(GBButton::KeyboardCount) : int(GBButton::PerPlayerCount);
+    const int rows = int(GBButton::TotalCount);
+    const int current = m_controlsTable->currentRow();
+    const int currentColumn = m_controlsTable->currentColumn();
     m_controlsTable->setRowCount(rows);
     Settings &settings = Settings::instance();
+
+    const QString uniqueId = selectedControllerId();
+    const bool customMapping =
+        !uniqueId.isEmpty() && !GamepadManager::storedMapping(uniqueId, selectedControllerName()).isEmpty();
+    const QVariantMap mapping =
+        uniqueId.isEmpty() ? QVariantMap() : GamepadManager::mappingForEditing(uniqueId, selectedControllerName());
+    const QColor highlight = palette().color(QPalette::Highlight).lighter(170);
+
     for (int row = 0; row < rows; row++) {
-        m_controlsTable->setItem(row, 0, new QTableWidgetItem(buttonName(GBButton(row))));
-        auto *item = new QTableWidgetItem;
-        if (row == m_buttonBeingModified) {
-            item->setText(tr("Select a new key…"));
+        auto *action = new QTableWidgetItem(buttonName(GBButton(row)));
+        action->setFlags(Qt::ItemIsEnabled);
+        m_controlsTable->setItem(row, 0, action);
+
+        // Keyboard
+        auto *key = new QTableWidgetItem;
+        if (row == m_captureRow && m_captureColumn == 1) {
+            key->setText(tr("Press a key…"));
+        }
+        else if (!isCellBindable(row, 1)) {
+            key->setText(QStringLiteral("—"));
+            key->setFlags(Qt::ItemIsEnabled);
+            key->setForeground(palette().color(QPalette::PlaceholderText));
         }
         else {
-            const int key = settings.intValue(buttonPreferenceName(GBButton(row), player));
-            item->setText(keyDisplayName(key));
-            if (key && usesForKey(key) > 1) {
-                QFont bold = item->font();
+            const int value = settings.intValue(buttonPreferenceName(GBButton(row), player));
+            key->setText(keyDisplayName(value));
+            if (value && usesForKey(value) > 1) {
+                QFont bold = key->font();
                 bold.setBold(true);
-                item->setFont(bold);
-                item->setForeground(QColor::fromRgbF(0.9375, 0.25, 0.25));
+                key->setFont(bold);
+                key->setForeground(QColor::fromRgbF(0.9375, 0.25, 0.25));
             }
         }
-        m_controlsTable->setItem(row, 1, item);
+        m_controlsTable->setItem(row, 1, key);
+
+        // Controller
+        auto *pad = new QTableWidgetItem;
+        if (row == m_captureRow && m_captureColumn == 2) {
+            pad->setText(tr("Press a controller button…"));
+        }
+        else if (uniqueId.isEmpty()) {
+            pad->setText(QStringLiteral("—"));
+            pad->setFlags(Qt::ItemIsEnabled);
+            pad->setForeground(palette().color(QPalette::PlaceholderText));
+        }
+        else {
+            QStringList names;
+            for (const QString &input : GamepadManager::inputsForAction(mapping, gamepadActionForButton(row))) {
+                names << GamepadManager::instance().inputDisplayName(uniqueId, input);
+            }
+            pad->setText(names.join(QStringLiteral(", ")));
+            if (!customMapping) {
+                QFont italic = pad->font();
+                italic.setItalic(true);
+                pad->setFont(italic);
+                pad->setToolTip(tr("Default binding"));
+            }
+        }
+        m_controlsTable->setItem(row, 2, pad);
+
+        // The wizard's current step
+        if (row == m_configurationState) {
+            for (int column = 0; column < 3; column++) {
+                m_controlsTable->item(row, column)->setBackground(highlight);
+            }
+        }
     }
+    if (current >= 0 && currentColumn >= 0) {
+        m_controlsTable->setCurrentCell(current, currentColumn);
+    }
+    if (m_configurationState >= 0 && m_configurationState < rows) {
+        m_controlsTable->scrollToItem(m_controlsTable->item(m_configurationState, 0));
+    }
+}
+
+void PreferencesDialog::beginCapture(int row, int column)
+{
+    if (!isCellBindable(row, column) || m_configurationState >= 0) {
+        return;
+    }
+    m_captureRow = row;
+    m_captureColumn = column;
+    m_controlsTable->setEnabled(false);
+    m_playerButton->setEnabled(false);
+    m_controllerButton->setEnabled(false);
+    reloadControlsTable();
+    setFocus();
+}
+
+void PreferencesDialog::cancelCapture()
+{
+    if (m_captureRow < 0) {
+        return;
+    }
+    m_captureRow = -1;
+    m_captureColumn = -1;
+    m_controlsTable->setEnabled(true);
+    m_playerButton->setEnabled(true);
+    m_controllerButton->setEnabled(!selectedControllerId().isEmpty());
+    reloadControlsTable();
+    m_controlsTable->setFocus();
+}
+
+void PreferencesDialog::clearBinding(int row, int column)
+{
+    if (!isCellBindable(row, column)) {
+        return;
+    }
+    if (column == 1) {
+        // An explicit 0 overrides the registered default key.
+        Settings::instance().setValue(buttonPreferenceName(GBButton(row), unsigned(m_playerButton->currentIndex())), 0);
+    }
+    else {
+        const QString uniqueId = selectedControllerId();
+        const QString name = selectedControllerName();
+        GamepadManager::setMapping(uniqueId, name,
+                                   GamepadManager::clearAction(GamepadManager::mappingForEditing(uniqueId, name),
+                                                               gamepadActionForButton(row)));
+    }
+}
+
+bool PreferencesDialog::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == m_controlsTable && event->type() == QEvent::KeyPress && m_captureRow < 0) {
+        auto *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->key() == Qt::Key_Delete) {
+            clearBinding(m_controlsTable->currentRow(), m_controlsTable->currentColumn());
+            return true;
+        }
+        if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
+            beginCapture(m_controlsTable->currentRow(), m_controlsTable->currentColumn());
+            return true;
+        }
+    }
+    return QDialog::eventFilter(watched, event);
 }
 
 void PreferencesDialog::keyPressEvent(QKeyEvent *event)
 {
-    if (m_buttonBeingModified < 0) {
+    if (m_captureRow < 0) {
         QDialog::keyPressEvent(event);
         return;
     }
-    Settings::instance().setValue(
-        buttonPreferenceName(GBButton(m_buttonBeingModified), unsigned(m_playerButton->currentIndex())), event->key());
-    m_buttonBeingModified = -1;
-    m_controlsTable->setEnabled(true);
-    m_playerButton->setEnabled(true);
-    reloadControlsTable();
-    m_controlsTable->setFocus();
+    if (event->key() == Qt::Key_Escape) {
+        cancelCapture();
+        return;
+    }
+    if (m_captureColumn == 1) {
+        const int row = m_captureRow;
+        cancelCapture();
+        Settings::instance().setValue(buttonPreferenceName(GBButton(row), unsigned(m_playerButton->currentIndex())),
+                                      event->key());
+    }
+    // Waiting for a controller input: other keys are ignored.
 }
 
 void PreferencesDialog::refreshJoypadMenu()
@@ -592,6 +828,8 @@ void PreferencesDialog::refreshJoypadMenu()
     }
 }
 
+// MARK: - Configuration wizard
+
 void PreferencesDialog::advanceConfigurationStateMachine()
 {
     m_configurationState++;
@@ -603,7 +841,9 @@ void PreferencesDialog::advanceConfigurationStateMachine()
     }
     else {
         stopConfiguration();
+        return;
     }
+    reloadControlsTable();
 }
 
 void PreferencesDialog::stopConfiguration()
@@ -612,32 +852,58 @@ void PreferencesDialog::stopConfiguration()
     m_configureButton->setEnabled(true);
     m_skipButton->setEnabled(false);
     m_configureButton->setText(tr("Configure a controller"));
+    reloadControlsTable();
 }
 
 void PreferencesDialog::controllerInput(const QString &uniqueId, const QString &inputId, bool pressed)
 {
-    // Port of -[GBPreferencesWindow controller:buttonChangedState:]
+    // Port of -[GBPreferencesWindow controller:buttonChangedState:], extended
+    // with single-binding capture from the table.
+    if (!pressed) {
+        return;
+    }
+    const bool capturing = m_captureRow >= 0 && m_captureColumn == 2;
+    const bool configuring = m_configurationState >= 0 && m_configurationState < int(GBButton::TotalCount);
+    if (!capturing && !configuring) {
+        return;
+    }
     if (m_debounce.elapsed() < 250) {
         return;
     }
     m_debounce.restart();
-    if (!pressed || m_configurationState < 0 || m_configurationState >= int(GBButton::TotalCount)) {
-        return;
-    }
-    if (m_joystickBeingConfigured.isEmpty()) {
-        m_joystickBeingConfigured = uniqueId;
-    }
-    else if (m_joystickBeingConfigured != uniqueId) {
-        return;
-    }
     const auto *controller = GamepadManager::instance().controller(uniqueId);
     if (!controller) {
         return;
     }
+
+    if (capturing) {
+        if (uniqueId != selectedControllerId()) {
+            return;
+        }
+        const int row = m_captureRow;
+        cancelCapture();
+        GamepadManager::setMapping(
+            uniqueId, controller->name,
+            GamepadManager::bindInput(GamepadManager::mappingForEditing(uniqueId, controller->name), inputId,
+                                      gamepadActionForButton(row)));
+        return;
+    }
+
+    if (m_joystickBeingConfigured.isEmpty()) {
+        m_joystickBeingConfigured = uniqueId;
+        // Show the controller being configured in the table.
+        const int index = m_controllerButton->findData(uniqueId);
+        if (index >= 0) {
+            m_controllerButton->setCurrentIndex(index);
+        }
+    }
+    else if (m_joystickBeingConfigured != uniqueId) {
+        return;
+    }
     Settings &settings = Settings::instance();
-    QVariantMap instanceMappings = settings.mapValue(QStringLiteral("JoyKitInstanceMapping"));
-    QVariantMap nameMappings = settings.mapValue(QStringLiteral("JoyKitNameMapping"));
-    QVariantMap mapping = m_configurationState != 0 ? instanceMappings.value(uniqueId).toMap() : QVariantMap();
+    QVariantMap mapping = m_configurationState != 0
+        ? settings.mapValue(QStringLiteral("JoyKitInstanceMapping")).value(uniqueId).toMap()
+        : QVariantMap();
 
     const bool isAxis = inputId.startsWith(QLatin1Char('a'));
     if (m_configurationState == int(GBButton::Underclock)) {
@@ -653,18 +919,13 @@ void PreferencesDialog::controllerInput(const QString &uniqueId, const QString &
         }
     }
     mapping[inputId] = int(gamepadActionForButton(m_configurationState));
-    instanceMappings[uniqueId] = mapping;
-    nameMappings[controller->name] = mapping;
-    settings.setValue(QStringLiteral("JoyKitInstanceMapping"), instanceMappings);
-    settings.setValue(QStringLiteral("JoyKitNameMapping"), nameMappings);
+    GamepadManager::setMapping(uniqueId, controller->name, mapping);
     advanceConfigurationStateMachine();
 }
 
 void PreferencesDialog::closeEvent(QCloseEvent *event)
 {
     stopConfiguration();
-    m_buttonBeingModified = -1;
-    m_controlsTable->setEnabled(true);
-    m_playerButton->setEnabled(true);
+    cancelCapture();
     QDialog::closeEvent(event);
 }

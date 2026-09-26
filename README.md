@@ -94,6 +94,8 @@ Why this stays cheap:
 | Game Boy Printer (feed window, save, print), Workboy | ✅ |
 | Link cable & infrared between two open windows | ✅ |
 | Game Boy Camera | ✅ via Qt Multimedia |
+| Controller binding editor (keyboard and controller side by side, per-button rebind/clear/reset) | ✅ Beyond Cocoa, which only has the configuration wizard |
+| Pause / mute when the window is inactive (both optional, off by default) | ✅ Beyond Cocoa |
 | Alarm notifications | ⚠️ Only while the app keeps running (system tray message) |
 | Joy-Con pairing UI, auto-updater, QuickLook | ❌ Apple-specific / out of scope |
 
