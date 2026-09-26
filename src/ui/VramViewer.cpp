@@ -70,7 +70,8 @@ void VramImageView::paintEvent(QPaintEvent *)
         const int h = m_image.height();
         for (int dx : {0, -w}) {
             for (int dy : {0, -h}) {
-                const QRect r(m_scrollRect.x() + dx, m_scrollRect.y() + dy, m_scrollRect.width(), m_scrollRect.height());
+                const QRect r(m_scrollRect.x() + dx, m_scrollRect.y() + dy, m_scrollRect.width(),
+                              m_scrollRect.height());
                 if (r.right() < 0 || r.bottom() < 0) {
                     continue;
                 }
@@ -120,8 +121,7 @@ QImage imageFromBuffer(const uint32_t *buffer, int width, int height)
 
 } // namespace
 
-VramViewer::VramViewer(EmulatorSession *session, QWidget *parent)
-    : QWidget(parent, Qt::Window), m_session(session)
+VramViewer::VramViewer(EmulatorSession *session, QWidget *parent) : QWidget(parent, Qt::Window), m_session(session)
 {
     m_gridCheckbox = new QCheckBox(tr("Grid"));
     m_scrollCheckbox = new QCheckBox(tr("Scrolling"));
@@ -165,7 +165,8 @@ VramViewer::VramViewer(EmulatorSession *session, QWidget *parent)
         item.widget = new QFrame;
         static_cast<QFrame *>(item.widget)->setFrameShape(QFrame::StyledPanel);
         item.widget->setAutoFillBackground(true);
-        item.widget->setMinimumWidth(item.widget->fontMetrics().horizontalAdvance(QStringLiteral("0000(-000, -000)---00")) + 50);
+        item.widget->setMinimumWidth(
+            item.widget->fontMetrics().horizontalAdvance(QStringLiteral("0000(-000, -000)---00")) + 50);
         item.widget->setBackgroundRole((i / 4) % 2 ? QPalette::AlternateBase : QPalette::Base);
         auto *grid = new QGridLayout(item.widget);
         grid->setContentsMargins(4, 4, 4, 4);
@@ -320,18 +321,16 @@ void VramViewer::reload()
             }
             std::vector<uint32_t> buffer(256 * 256);
             GB_draw_tilemap(gb, buffer.data(), paletteType, uint8_t((index - 2) & 7),
-                            GB_map_type_t(m_tilemapMap->currentIndex()), GB_tileset_type_t(m_tilemapSet->currentIndex()));
-            const auto *io = static_cast<const uint8_t *>(GB_get_direct_access(gb, GB_DIRECT_ACCESS_IO, nullptr, nullptr));
+                            GB_map_type_t(m_tilemapMap->currentIndex()),
+                            GB_tileset_type_t(m_tilemapSet->currentIndex()));
+            const auto *io =
+                static_cast<const uint8_t *>(GB_get_direct_access(gb, GB_DIRECT_ACCESS_IO, nullptr, nullptr));
             m_tilemapView->setScrollRect(QRect(io[GB_IO_SCX], io[GB_IO_SCY], 160, 144), m_scrollCheckbox->isChecked());
             m_tilemapView->setImage(imageFromBuffer(buffer.data(), 256, 256));
             break;
         }
-        case 2:
-            reloadObjects();
-            break;
-        case 3:
-            reloadPalettes();
-            break;
+        case 2: reloadObjects(); break;
+        case 3: reloadPalettes(); break;
     }
 }
 
@@ -359,7 +358,8 @@ void VramViewer::reloadObjects()
         item.oamAddress->setText(QStringLiteral("$%1").arg(info[i].oam_addr, 4, 16, QLatin1Char('0')).toUpper());
         item.position->setText(QStringLiteral("(%1, %2)").arg(int(info[i].x) - 8).arg(int(info[i].y) - 16));
         item.tile->setText(QStringLiteral("$%1").arg(info[i].tile, 2, 16, QLatin1Char('0')).toUpper());
-        item.tileAddress->setText(QStringLiteral("$%1").arg(0x8000 + info[i].tile * 0x10, 4, 16, QLatin1Char('0')).toUpper());
+        item.tileAddress->setText(
+            QStringLiteral("$%1").arg(0x8000 + info[i].tile * 0x10, 4, 16, QLatin1Char('0')).toUpper());
         item.warning->setVisible(info[i].obscured_by_line_limit);
         const uint8_t flags = info[i].flags;
         if (cgb) {
@@ -379,7 +379,8 @@ void VramViewer::reloadObjects()
         }
         const QImage image = imageFromBuffer(info[i].image, 8, height);
         const int scale = 32 / height;
-        item.image->setPixmap(QPixmap::fromImage(image.scaled(8 * scale, height * scale, Qt::IgnoreAspectRatio, Qt::FastTransformation)));
+        item.image->setPixmap(
+            QPixmap::fromImage(image.scaled(8 * scale, height * scale, Qt::IgnoreAspectRatio, Qt::FastTransformation)));
     }
 }
 
@@ -424,7 +425,8 @@ void VramViewer::tilemapHovered(int x, int y)
     uint16_t mapBase = 0x1800;
     const auto mapType = GB_map_type_t(m_tilemapMap->currentIndex());
     auto tilesetType = GB_tileset_type_t(m_tilemapSet->currentIndex());
-    const uint8_t lcdc = static_cast<const uint8_t *>(GB_get_direct_access(gb, GB_DIRECT_ACCESS_IO, nullptr, nullptr))[GB_IO_LCDC];
+    const uint8_t lcdc =
+        static_cast<const uint8_t *>(GB_get_direct_access(gb, GB_DIRECT_ACCESS_IO, nullptr, nullptr))[GB_IO_LCDC];
     const auto *vram = static_cast<const uint8_t *>(GB_get_direct_access(gb, GB_DIRECT_ACCESS_VRAM, nullptr, nullptr));
 
     if (mapType == GB_MAP_9C00 || (mapType == GB_MAP_AUTO && (lcdc & GB_LCDC_BG_MAP))) {

@@ -56,8 +56,7 @@ QString CheatsWindow::actionDescription(const GB_cheat_t *cheat)
     return QStringLiteral("[%1] = $%2").arg(addressString(cheat)).arg(cheat->value, 2, 16, QLatin1Char('0'));
 }
 
-CheatsWindow::CheatsWindow(EmulatorSession *session, QWidget *parent)
-    : QWidget(parent, Qt::Window), m_session(session)
+CheatsWindow::CheatsWindow(EmulatorSession *session, QWidget *parent) : QWidget(parent, Qt::Window), m_session(session)
 {
     m_table = new QTableWidget(0, 4);
     m_table->setHorizontalHeaderLabels({QString(), tr("Enabled"), tr("Description"), tr("Action")});

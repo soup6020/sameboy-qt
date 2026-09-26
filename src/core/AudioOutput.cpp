@@ -1,7 +1,7 @@
 #include "AudioOutput.h"
 
-#include <SDL3/SDL.h>
 #include <QtGlobal>
+#include <SDL3/SDL.h>
 #include <vector>
 
 AudioOutput::AudioOutput(Renderer renderer, unsigned sampleRate)

@@ -61,8 +61,7 @@ QList<std::pair<QString, QVariant>> hotkeyActions()
 
 } // namespace
 
-PreferencesDialog::PreferencesDialog(QWidget *parent)
-    : QDialog(parent)
+PreferencesDialog::PreferencesDialog(QWidget *parent) : QDialog(parent)
 {
     setWindowTitle(tr("Preferences"));
     m_tabs = new QTabWidget;
@@ -89,9 +88,8 @@ QCheckBox *PreferencesDialog::checkBox(const QString &title, const QString &key,
         QSignalBlocker blocker(box);
         box->setChecked(value.toBool() ^ invert);
     });
-    connect(box, &QCheckBox::toggled, box, [key, invert](bool checked) {
-        Settings::instance().setValue(key, checked ^ invert);
-    });
+    connect(box, &QCheckBox::toggled, box,
+            [key, invert](bool checked) { Settings::instance().setValue(key, checked ^ invert); });
     return box;
 }
 
@@ -114,9 +112,8 @@ QComboBox *PreferencesDialog::comboBox(const QString &key, const QList<std::pair
             }
         }
     });
-    connect(combo, &QComboBox::activated, combo, [combo, key](int index) {
-        Settings::instance().setValue(key, combo->itemData(index));
-    });
+    connect(combo, &QComboBox::activated, combo,
+            [combo, key](int index) { Settings::instance().setValue(key, combo->itemData(index)); });
     return combo;
 }
 
@@ -128,9 +125,8 @@ QSlider *PreferencesDialog::slider(const QString &key, int minimum, int maximum,
         QSignalBlocker blocker(slider);
         slider->setValue(int(std::round(value.toDouble() * denominator)));
     });
-    connect(slider, &QSlider::valueChanged, slider, [key, denominator](int value) {
-        Settings::instance().setValue(key, value / denominator);
-    });
+    connect(slider, &QSlider::valueChanged, slider,
+            [key, denominator](int value) { Settings::instance().setValue(key, value / denominator); });
     return slider;
 }
 
@@ -144,19 +140,27 @@ QWidget *PreferencesDialog::createEmulationTab()
     // Unsupported revisions are listed but disabled, as in Preferences.xib.
     form->addRow(tr("Game Boy revision:"),
                  comboBox(QStringLiteral("GBDMGModel"),
-                          {{tr("DMG-CPU 0"), 0x000}, {tr("DMG-CPU A"), 0x001}, {tr("DMG-CPU B"), int(GB_MODEL_DMG_B)},
+                          {{tr("DMG-CPU 0"), 0x000},
+                           {tr("DMG-CPU A"), 0x001},
+                           {tr("DMG-CPU B"), int(GB_MODEL_DMG_B)},
                            {tr("DMG-CPU C"), 0x003}},
                           {0x000, 0x001, 0x003}));
     form->addRow(tr("Game Boy Color revision:"),
                  comboBox(QStringLiteral("GBCGBModel"),
-                          {{tr("CPU CGB 0"), int(GB_MODEL_CGB_0)}, {tr("CPU CGB A"), int(GB_MODEL_CGB_A)},
-                           {tr("CPU CGB B"), int(GB_MODEL_CGB_B)}, {tr("CPU CGB C"), int(GB_MODEL_CGB_C)},
-                           {tr("CPU CGB D"), int(GB_MODEL_CGB_D)}, {tr("CPU CGB E"), int(GB_MODEL_CGB_E)}}));
+                          {{tr("CPU CGB 0"), int(GB_MODEL_CGB_0)},
+                           {tr("CPU CGB A"), int(GB_MODEL_CGB_A)},
+                           {tr("CPU CGB B"), int(GB_MODEL_CGB_B)},
+                           {tr("CPU CGB C"), int(GB_MODEL_CGB_C)},
+                           {tr("CPU CGB D"), int(GB_MODEL_CGB_D)},
+                           {tr("CPU CGB E"), int(GB_MODEL_CGB_E)}}));
     form->addRow(tr("Game Boy Advance revision:"),
                  comboBox(QStringLiteral("GBAGBModel"),
-                          {{tr("CPU AGB 0 (Early GBA)"), 0x206}, {tr("CPU AGB A (GBA)"), int(GB_MODEL_AGB_A)},
-                           {tr("CPU AGB A (Game Boy Player)"), int(GB_MODEL_GBP_A)}, {tr("CPU AGB B (GBA SP)"), 0x208},
-                           {tr("CPU AGB E (Late GBA SP)"), 0x209}, {tr("CPU AGB E (Late Game Boy Player)"), 0x229}},
+                          {{tr("CPU AGB 0 (Early GBA)"), 0x206},
+                           {tr("CPU AGB A (GBA)"), int(GB_MODEL_AGB_A)},
+                           {tr("CPU AGB A (Game Boy Player)"), int(GB_MODEL_GBP_A)},
+                           {tr("CPU AGB B (GBA SP)"), 0x208},
+                           {tr("CPU AGB E (Late GBA SP)"), 0x209},
+                           {tr("CPU AGB E (Late Game Boy Player)"), 0x229}},
                           {0x206, 0x208, 0x209, 0x229}));
     form->addRow(tr("Super Game Boy model:"),
                  comboBox(QStringLiteral("GBSGBModel"),
@@ -171,8 +175,9 @@ QWidget *PreferencesDialog::createEmulationTab()
             Settings::instance().remove(QStringLiteral("GBBootROMsFolder"));
         }
         else if (action == QLatin1String("other")) {
-            const QString folder = QFileDialog::getExistingDirectory(
-                this, tr("Select Boot ROMs Folder"), Settings::instance().stringValue(QStringLiteral("GBBootROMsFolder")));
+            const QString folder =
+                QFileDialog::getExistingDirectory(this, tr("Select Boot ROMs Folder"),
+                                                  Settings::instance().stringValue(QStringLiteral("GBBootROMsFolder")));
             if (!folder.isEmpty()) {
                 Settings::instance().setValue(QStringLiteral("GBBootROMsFolder"), folder);
             }
@@ -184,11 +189,17 @@ QWidget *PreferencesDialog::createEmulationTab()
 
     form->addRow(tr("Rewinding duration:"),
                  comboBox(QStringLiteral("GBRewindLength"),
-                          {{tr("Disabled"), 0}, {tr("10 Seconds"), 10}, {tr("30 Seconds"), 30}, {tr("1 Minute"), 60},
-                           {tr("2 Minutes"), 120}, {tr("5 Minutes"), 300}, {tr("10 Minutes"), 600}}));
+                          {{tr("Disabled"), 0},
+                           {tr("10 Seconds"), 10},
+                           {tr("30 Seconds"), 30},
+                           {tr("1 Minute"), 60},
+                           {tr("2 Minutes"), 120},
+                           {tr("5 Minutes"), 300},
+                           {tr("10 Minutes"), 600}}));
     form->addRow(tr("Real Time Clock emulation:"),
                  comboBox(QStringLiteral("GBRTCMode"),
-                          {{tr("Sync to system clock"), int(GB_RTC_MODE_SYNC_TO_HOST)}, {tr("Accurate"), int(GB_RTC_MODE_ACCURATE)}}));
+                          {{tr("Sync to system clock"), int(GB_RTC_MODE_SYNC_TO_HOST)},
+                           {tr("Accurate"), int(GB_RTC_MODE_ACCURATE)}}));
 
     m_turboCapCheckbox = new QCheckBox(tr("Cap turbo speed to:"));
     m_turboCapSlider = new QSlider(Qt::Horizontal);
@@ -283,13 +294,15 @@ QWidget *PreferencesDialog::createVideoTab()
     m_paletteButton = new QComboBox;
     connect(m_paletteButton, &QComboBox::activated, this, &PreferencesDialog::colorPaletteChanged);
     updatePalettesMenu();
-    Settings::instance().observe(this, QStringLiteral("GBThemes"), [this](const QVariant &) { updatePalettesMenu(); }, false);
+    Settings::instance().observe(
+        this, QStringLiteral("GBThemes"), [this](const QVariant &) { updatePalettesMenu(); }, false);
     form->addRow(tr("Color palette for monochrome models:"), m_paletteButton);
 
     form->addRow(tr("Display border:"),
-                 comboBox(QStringLiteral("GBBorderMode"), {{tr("Never"), int(GB_BORDER_NEVER)},
-                                                           {tr("Super Game Boy only"), int(GB_BORDER_SGB)},
-                                                           {tr("Always"), int(GB_BORDER_ALWAYS)}}));
+                 comboBox(QStringLiteral("GBBorderMode"),
+                          {{tr("Never"), int(GB_BORDER_NEVER)},
+                           {tr("Super Game Boy only"), int(GB_BORDER_SGB)},
+                           {tr("Always"), int(GB_BORDER_ALWAYS)}}));
 
     form->addRow(QString(), checkBox(tr("Keep aspect ratio"), QStringLiteral("GBAspectRatioUnkept"), true));
     form->addRow(QString(), checkBox(tr("Force integer scale"), QStringLiteral("GBForceIntegerScale")));
@@ -312,9 +325,8 @@ QWidget *PreferencesDialog::createVideoTab()
     connect(font, &QFontComboBox::currentFontChanged, this, [](const QFont &selected) {
         Settings::instance().setValue(QStringLiteral("GBDebuggerFont"), selected.family());
     });
-    connect(fontSize, &QSpinBox::valueChanged, this, [](int size) {
-        Settings::instance().setValue(QStringLiteral("GBDebuggerFontSize"), size);
-    });
+    connect(fontSize, &QSpinBox::valueChanged, this,
+            [](int size) { Settings::instance().setValue(QStringLiteral("GBDebuggerFontSize"), size); });
     auto *fontRow = new QHBoxLayout;
     fontRow->addWidget(font, 1);
     fontRow->addWidget(fontSize);
@@ -350,8 +362,8 @@ void PreferencesDialog::updatePalettesMenu()
         m_paletteButton->setCurrentIndex(m_paletteButton->findData(mode));
     }
     else {
-        m_paletteButton->setCurrentIndex(
-            m_paletteButton->findData(QStringLiteral("theme:") + settings.stringValue(QStringLiteral("GBCurrentTheme"))));
+        m_paletteButton->setCurrentIndex(m_paletteButton->findData(
+            QStringLiteral("theme:") + settings.stringValue(QStringLiteral("GBCurrentTheme"))));
     }
 }
 
@@ -467,15 +479,19 @@ QWidget *PreferencesDialog::createControlsTab()
                  checkBox(tr("Prefer joysticks over motion controls"), QStringLiteral("GBMBC7JoystickOverride")));
     form->addRow(QString(), checkBox(tr("Allow mouse controls"), QStringLiteral("GBMBC7AllowMouse")));
     form->addRow(tr("Enable rumble:"),
-                 comboBox(QStringLiteral("GBRumbleMode"), {{tr("Never"), int(GB_RUMBLE_DISABLED)},
-                                                           {tr("For rumble-enabled Game Paks"), int(GB_RUMBLE_CARTRIDGE_ONLY)},
-                                                           {tr("Always"), int(GB_RUMBLE_ALL_GAMES)}}));
+                 comboBox(QStringLiteral("GBRumbleMode"),
+                          {{tr("Never"), int(GB_RUMBLE_DISABLED)},
+                           {tr("For rumble-enabled Game Paks"), int(GB_RUMBLE_CARTRIDGE_ONLY)},
+                           {tr("Always"), int(GB_RUMBLE_ALL_GAMES)}}));
     form->addRow(tr("Rumble strength:"), slider(QStringLiteral("GBRumbleStrength"), 32, 256, 256));
     form->addRow(tr("Controller “Hotkey 1” action:"), comboBox(QStringLiteral("GBJoypadHotkey1"), hotkeyActions()));
     form->addRow(tr("Controller “Hotkey 2” action:"), comboBox(QStringLiteral("GBJoypadHotkey2"), hotkeyActions()));
     form->addRow(QString(), checkBox(tr("Analog turbo and slow-motion controls"), QStringLiteral("GBAnalogControls")));
-    form->addRow(QString(), checkBox(tr("Use joysticks as faux analog controls"), QStringLiteral("GBFauxAnalogInputs")));
-    form->addRow(QString(), checkBox(tr("Enable controllers while in background"), QStringLiteral("GBAllowBackgroundControllers")));
+    form->addRow(QString(),
+                 checkBox(tr("Use joysticks as faux analog controls"), QStringLiteral("GBFauxAnalogInputs")));
+    form->addRow(
+        QString(),
+        checkBox(tr("Enable controllers while in background"), QStringLiteral("GBAllowBackgroundControllers")));
     layout->addWidget(controllers);
 
     GamepadManager &gamepads = GamepadManager::instance();
@@ -543,8 +559,8 @@ void PreferencesDialog::keyPressEvent(QKeyEvent *event)
         QDialog::keyPressEvent(event);
         return;
     }
-    Settings::instance().setValue(buttonPreferenceName(GBButton(m_buttonBeingModified), unsigned(m_playerButton->currentIndex())),
-                                  event->key());
+    Settings::instance().setValue(
+        buttonPreferenceName(GBButton(m_buttonBeingModified), unsigned(m_playerButton->currentIndex())), event->key());
     m_buttonBeingModified = -1;
     m_controlsTable->setEnabled(true);
     m_playerButton->setEnabled(true);
@@ -562,7 +578,8 @@ void PreferencesDialog::refreshJoypadMenu()
     m_preferredJoypadButton->addItem(tr("None"), QString());
     bool found = false;
     for (const auto *controller : GamepadManager::instance().controllers()) {
-        m_preferredJoypadButton->addItem(QStringLiteral("%1 (%2)").arg(controller->name, controller->uniqueId), controller->uniqueId);
+        m_preferredJoypadButton->addItem(QStringLiteral("%1 (%2)").arg(controller->name, controller->uniqueId),
+                                         controller->uniqueId);
         if (controller->uniqueId == selected) {
             m_preferredJoypadButton->setCurrentIndex(m_preferredJoypadButton->count() - 1);
             found = true;

@@ -12,8 +12,8 @@ extern "C" {
 #include "core/Models.h"
 
 static const char *const kButtonNames[] = {
-    "Right", "Left", "Up", "Down", "A", "B", "Select", "Start", "Rapid A", "Rapid B",
-    "Turbo", "Rewind", "Slow-Motion", "Hotkey 1", "Hotkey 2",
+    "Right",   "Left",    "Up",    "Down",   "A",           "B",        "Select",   "Start",
+    "Rapid A", "Rapid B", "Turbo", "Rewind", "Slow-Motion", "Hotkey 1", "Hotkey 2",
 };
 static_assert(sizeof(kButtonNames) / sizeof(kButtonNames[0]) == int(GBButton::TotalCount));
 
@@ -52,7 +52,8 @@ Settings::Settings()
 {
     // One-time migration from the location used by early builds.
     if (m_store.allKeys().isEmpty()) {
-        QSettings legacy(QSettings::NativeFormat, QSettings::UserScope, QStringLiteral("SameBoy"), QStringLiteral("SameBoy-Qt"));
+        QSettings legacy(QSettings::NativeFormat, QSettings::UserScope, QStringLiteral("SameBoy"),
+                         QStringLiteral("SameBoy-Qt"));
         for (const QString &key : legacy.allKeys()) {
             m_store.setValue(key, legacy.value(key));
         }
@@ -163,7 +164,7 @@ void Settings::remove(const QString &key)
     emit changed(key, value(key));
 }
 
-void Settings::observe(QObject *context, const QString &key, std::function<void(const QVariant &)> callback,
+void Settings::observe(QObject *context, const QString &key, const std::function<void(const QVariant &)> &callback,
                        bool callNow)
 {
     if (callNow) {

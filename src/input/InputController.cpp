@@ -113,8 +113,7 @@ uint8_t workboyKeyForKey(const QKeyEvent *event)
 
 } // namespace
 
-InputController::InputController(EmulatorSession *session, QObject *parent)
-    : QObject(parent), m_session(session)
+InputController::InputController(EmulatorSession *session, QObject *parent) : QObject(parent), m_session(session)
 {
     Settings &settings = Settings::instance();
     connect(&settings, &Settings::changed, this, [this](const QString &key) {
@@ -122,12 +121,10 @@ InputController::InputController(EmulatorSession *session, QObject *parent)
             m_bindingsDirty = true;
         }
     });
-    settings.observe(this, QStringLiteral("GBAnalogControls"), [this](const QVariant &value) {
-        m_analogControls = value.toBool();
-    });
-    settings.observe(this, QStringLiteral("JoyKitDefaultControllers"), [this](const QVariant &) {
-        reassignControllers();
-    });
+    settings.observe(this, QStringLiteral("GBAnalogControls"),
+                     [this](const QVariant &value) { m_analogControls = value.toBool(); });
+    settings.observe(this, QStringLiteral("JoyKitDefaultControllers"),
+                     [this](const QVariant &) { reassignControllers(); });
 
     GamepadManager &gamepads = GamepadManager::instance();
     connect(&gamepads, &GamepadManager::actionChanged, this, &InputController::onAction);
@@ -482,8 +479,9 @@ void InputController::onAction(const QString &uniqueId, GamepadAction action, bo
 
     if (action == GamepadAction::Hotkey1 || action == GamepadAction::Hotkey2) {
         if (pressed) {
-            emit hotkey(Settings::instance().stringValue(action == GamepadAction::Hotkey1 ? QStringLiteral("GBJoypadHotkey1")
-                                                                                          : QStringLiteral("GBJoypadHotkey2")));
+            emit hotkey(Settings::instance().stringValue(action == GamepadAction::Hotkey1
+                                                             ? QStringLiteral("GBJoypadHotkey1")
+                                                             : QStringLiteral("GBJoypadHotkey2")));
         }
         return;
     }
@@ -503,14 +501,26 @@ void InputController::onAction(const QString &uniqueId, GamepadAction action, bo
             GB_set_use_faux_analog_inputs(effectiveGB, effectivePlayer, false);
         }
         switch (action) {
-            case GamepadAction::Right: GB_set_key_state_for_player(effectiveGB, GB_KEY_RIGHT, effectivePlayer, pressed); break;
-            case GamepadAction::Left: GB_set_key_state_for_player(effectiveGB, GB_KEY_LEFT, effectivePlayer, pressed); break;
-            case GamepadAction::Up: GB_set_key_state_for_player(effectiveGB, GB_KEY_UP, effectivePlayer, pressed); break;
-            case GamepadAction::Down: GB_set_key_state_for_player(effectiveGB, GB_KEY_DOWN, effectivePlayer, pressed); break;
+            case GamepadAction::Right:
+                GB_set_key_state_for_player(effectiveGB, GB_KEY_RIGHT, effectivePlayer, pressed);
+                break;
+            case GamepadAction::Left:
+                GB_set_key_state_for_player(effectiveGB, GB_KEY_LEFT, effectivePlayer, pressed);
+                break;
+            case GamepadAction::Up:
+                GB_set_key_state_for_player(effectiveGB, GB_KEY_UP, effectivePlayer, pressed);
+                break;
+            case GamepadAction::Down:
+                GB_set_key_state_for_player(effectiveGB, GB_KEY_DOWN, effectivePlayer, pressed);
+                break;
             case GamepadAction::A: GB_set_key_state_for_player(effectiveGB, GB_KEY_A, effectivePlayer, pressed); break;
             case GamepadAction::B: GB_set_key_state_for_player(effectiveGB, GB_KEY_B, effectivePlayer, pressed); break;
-            case GamepadAction::Select: GB_set_key_state_for_player(effectiveGB, GB_KEY_SELECT, effectivePlayer, pressed); break;
-            case GamepadAction::Start: GB_set_key_state_for_player(effectiveGB, GB_KEY_START, effectivePlayer, pressed); break;
+            case GamepadAction::Select:
+                GB_set_key_state_for_player(effectiveGB, GB_KEY_SELECT, effectivePlayer, pressed);
+                break;
+            case GamepadAction::Start:
+                GB_set_key_state_for_player(effectiveGB, GB_KEY_START, effectivePlayer, pressed);
+                break;
             case GamepadAction::RapidA:
                 m_rapidA[effectivePlayer] = pressed;
                 m_rapidACount[effectivePlayer] = 0;
@@ -524,7 +534,8 @@ void InputController::onAction(const QString &uniqueId, GamepadAction action, bo
             case GamepadAction::Rewind:
                 m_session->setRewinding(pressed && !m_session->partner());
                 if (pressed) {
-                    GB_set_turbo_mode(m_session->isSlave() ? m_session->partner()->gb() : m_session->gb(), false, false);
+                    GB_set_turbo_mode(m_session->isSlave() ? m_session->partner()->gb() : m_session->gb(), false,
+                                      false);
                     m_turbo = false;
                 }
                 break;
@@ -539,11 +550,8 @@ void InputController::onAction(const QString &uniqueId, GamepadAction action, bo
                     m_turbo = pressed;
                 }
                 break;
-            case GamepadAction::Underclock:
-                m_underclockKeyDown = pressed;
-                break;
-            default:
-                break;
+            case GamepadAction::Underclock: m_underclockKeyDown = pressed; break;
+            default: break;
         }
     }
 }

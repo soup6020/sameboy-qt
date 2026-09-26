@@ -29,7 +29,7 @@ public:
 
     // Invokes |callback| now and again whenever |key| changes, for as long as
     // |context| lives. Equivalent of Cocoa's observeStandardDefaultsKey:withBlock:.
-    void observe(QObject *context, const QString &key, std::function<void(const QVariant &)> callback,
+    void observe(QObject *context, const QString &key, const std::function<void(const QVariant &)> &callback,
                  bool callNow = true);
 
     // Merges built-in palette themes into the user's GBThemes (see GBApp.m).
@@ -51,8 +51,21 @@ private:
 
 // Names used for button preferences, identical to GBButtons.m.
 enum class GBButton : int {
-    Right, Left, Up, Down, A, B, Select, Start, RapidA, RapidB,
-    Turbo, Rewind, Underclock, Hotkey1, Hotkey2,
+    Right,
+    Left,
+    Up,
+    Down,
+    A,
+    B,
+    Select,
+    Start,
+    RapidA,
+    RapidB,
+    Turbo,
+    Rewind,
+    Underclock,
+    Hotkey1,
+    Hotkey2,
     TotalCount,
     KeyboardCount = Underclock + 1,
     PerPlayerCount = RapidB + 1,

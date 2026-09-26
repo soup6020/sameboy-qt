@@ -5,8 +5,7 @@
 #include <QPainterPath>
 #include <QWidget>
 
-OSDOverlay::OSDOverlay(QWidget *host)
-    : QObject(host), m_host(host)
+OSDOverlay::OSDOverlay(QWidget *host) : QObject(host), m_host(host)
 {
     m_timer.setInterval(25);
     connect(&m_timer, &QTimer::timeout, this, &OSDOverlay::animate);

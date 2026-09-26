@@ -129,7 +129,7 @@ public:
     void disconnectAllAccessories();
     void connectPrinter();
     void connectWorkboy();
-    void connectLinkCable(EmulatorSession *partner);
+    void connectLinkCable(EmulatorSession *other);
     void disconnectLinkCable();
     EmulatorSession *partner() const;
     bool isSlave() const { return m_master != nullptr; }

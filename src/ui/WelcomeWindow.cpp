@@ -11,8 +11,7 @@
 #include <QPainter>
 #include <QUrl>
 
-WelcomeWindow::WelcomeWindow(QWidget *parent)
-    : QMainWindow(parent)
+WelcomeWindow::WelcomeWindow(QWidget *parent) : QMainWindow(parent)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowTitle(QStringLiteral("SameBoy"));
@@ -54,15 +53,13 @@ void WelcomeWindow::buildMenus()
     app.addSettingsMenu(bar);
 
     QMenu *help = bar->addMenu(tr("&Help"));
-    help->addAction(tr("Debugger Help"), [] {
-        QDesktopServices::openUrl(QUrl(QStringLiteral("https://sameboy.github.io/debugger/")));
-    });
+    help->addAction(tr("Debugger Help"),
+                    [] { QDesktopServices::openUrl(QUrl(QStringLiteral("https://sameboy.github.io/debugger/"))); });
     help->addSeparator();
     QAction *about = help->addAction(tr("About SameBoy"), &app, &AppController::showAbout);
     about->setMenuRole(QAction::AboutRole);
-    help->addAction(tr("Sponsor SameBoy"), [] {
-        QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/sponsors/LIJI32")));
-    });
+    help->addAction(tr("Sponsor SameBoy"),
+                    [] { QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/sponsors/LIJI32"))); });
 }
 
 void WelcomeWindow::updatePalette()
@@ -99,7 +96,8 @@ void WelcomeWindow::paintEvent(QPaintEvent *)
     painter.fillRect(area, m_background.pixelColor(0, 0));
     QSize size = m_background.size();
     size.scale(area.size(), Qt::KeepAspectRatio);
-    const QRect target(area.topLeft() + QPoint((area.width() - size.width()) / 2, (area.height() - size.height()) / 2), size);
+    const QRect target(area.topLeft() + QPoint((area.width() - size.width()) / 2, (area.height() - size.height()) / 2),
+                       size);
     painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
     painter.drawImage(target, m_background);
 }

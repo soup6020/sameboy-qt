@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 class EmulatorSession;
 
@@ -30,8 +30,8 @@ public:
     void write(size_t offset, const uint8_t *data, size_t length);
 
 private:
-    void readChunk(size_t location, size_t length, uint8_t *destination) const;
-    void writeChunk(size_t location, const uint8_t *data, size_t length);
+    void readChunk(size_t location, size_t length, uint8_t *dst) const;
+    void writeChunk(size_t location, const uint8_t *src, size_t length);
 
     EmulatorSession *m_session;
     Mode m_mode = EntireSpace;

@@ -22,7 +22,12 @@ class PreferencesDialog : public QDialog
     Q_OBJECT
 
 public:
-    enum Tab { EmulationTab, VideoTab, AudioTab, ControlsTab };
+    enum Tab {
+        EmulationTab,
+        VideoTab,
+        AudioTab,
+        ControlsTab
+    };
 
     explicit PreferencesDialog(QWidget *parent = nullptr);
     void setCurrentTab(Tab tab);

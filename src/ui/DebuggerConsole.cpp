@@ -74,9 +74,8 @@ DebuggerConsole::DebuggerConsole(EmulatorSession *session, QWidget *parent)
         button->setIcon(style()->standardIcon(icon));
         button->setAutoRaise(true);
         button->setProperty("command", command);
-        connect(button, &QToolButton::clicked, this, [this, button] {
-            m_session->queueDebuggerCommand(button->property("command").toString());
-        });
+        connect(button, &QToolButton::clicked, this,
+                [this, button] { m_session->queueDebuggerCommand(button->property("command").toString()); });
         return button;
     };
     m_continueButton = makeButton(tr("Continue"), QStyle::SP_MediaPlay, QStringLiteral("continue"));
@@ -94,7 +93,8 @@ DebuggerConsole::DebuggerConsole(EmulatorSession *session, QWidget *parent)
 
     auto *bar = new QHBoxLayout;
     bar->setContentsMargins(4, 2, 4, 2);
-    for (QToolButton *button : {m_continueButton, m_finishButton, m_nextButton, m_backstepButton, m_stepButton, helpButton}) {
+    for (QToolButton *button :
+         {m_continueButton, m_finishButton, m_nextButton, m_backstepButton, m_stepButton, helpButton}) {
         bar->addWidget(button);
     }
     bar->addStretch();

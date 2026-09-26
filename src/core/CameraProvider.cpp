@@ -3,17 +3,16 @@
 
 #ifdef SAMEBOY_QT_CAMERA
 #include <QCamera>
+#include <QCoreApplication>
 #include <QMediaCaptureSession>
 #include <QMediaDevices>
 #include <QPermissions>
 #include <QTimer>
 #include <QVideoFrame>
 #include <QVideoSink>
-#include <QCoreApplication>
 #endif
 
-CameraProvider::CameraProvider(EmulatorSession *session, QObject *parent)
-    : QObject(parent), m_session(session)
+CameraProvider::CameraProvider(EmulatorSession *session, QObject *parent) : QObject(parent), m_session(session)
 {
     connect(session, &EmulatorSession::cameraRequested, this, &CameraProvider::requestUpdate);
 }
@@ -48,8 +47,7 @@ void CameraProvider::requestUpdate()
                 m_failed = true;
                 m_session->setCameraImage({});
                 return;
-            case Qt::PermissionStatus::Granted:
-                break;
+            case Qt::PermissionStatus::Granted: break;
         }
 #endif
         const QCameraDevice device = QMediaDevices::defaultVideoInput();

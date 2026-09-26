@@ -40,6 +40,13 @@ A `!` command runs inside the sandbox and fails.
 
 Toolchain: Qt 6.11, SDL3, rgbds (boot ROMs and the test ROM), GCC. The build must stay warning-free in `src/` and `tests/` (`-Wall -Wextra`).
 
+**Formatting and linting** (clang-tools from the dev shell; config in `.clang-format`, `.clang-tidy` and `.clangd`):
+- `scripts/lint.sh format` reformats our sources. Run it before finishing any change.
+- `scripts/lint.sh` checks formatting and runs clang-tidy with warnings as errors, which CI enforces. It needs `build/compile_commands.json` (CMake exports it), and a full run takes several minutes.
+- Use `scripts/lint.sh tidy <files>` to check only what you touched.
+- `third_party/` and moc output are never checked.
+- To silence a clang-tidy finding, fix the code or narrow the check in `.clang-tidy` with a reason. Don't scatter `NOLINT`.
+
 - **Tests:** `tests/tst_sameboy.cpp` (QtTest) runs `tests/testrom.asm`, which is assembled at build time. It counts frames at `$C000`, mirrors the joypad to `$C001` and writes `$42` to SRAM `$A000`.
   - SameBoy randomizes RAM at power-on, so tests must wait via `waitForGame()`: PC is in the ROM's main loop and the SRAM marker is written.
   - Tests set `XDG_CONFIG_HOME` to a temp dir. Always isolate settings like this; never touch the user's real `~/.config/sameboy-qt`.

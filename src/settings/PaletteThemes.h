@@ -15,5 +15,5 @@ QVariantMap defaultPaletteThemes();
 const GB_palette_t *currentUserPalette();
 
 // Theme dictionary helpers ("Colors" are 0xAABBGGRR, as stored by Cocoa).
-QColor themeColorFromInt(uint32_t value);
+QColor themeColorFromInt(uint32_t c);
 uint32_t themeColorToInt(const QColor &color);

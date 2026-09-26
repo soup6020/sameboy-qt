@@ -61,13 +61,19 @@ void MemoryModel::readChunk(size_t location, size_t length, uint8_t *dst) const
         });
     };
     switch (location >> 12) {
-        case 0x0: case 0x1: case 0x2: case 0x3: {
+        case 0x0:
+        case 0x1:
+        case 0x2:
+        case 0x3: {
             uint16_t bank = 0;
             auto *data = static_cast<uint8_t *>(GB_get_direct_access(gb, GB_DIRECT_ACCESS_ROM0, nullptr, &bank));
             memcpy(dst, data + bank * 0x4000 + location, length);
             break;
         }
-        case 0x4: case 0x5: case 0x6: case 0x7: {
+        case 0x4:
+        case 0x5:
+        case 0x6:
+        case 0x7: {
             uint16_t bank = 0;
             size_t size = 0;
             auto *data = static_cast<uint8_t *>(GB_get_direct_access(gb, GB_DIRECT_ACCESS_ROM, &size, &bank));
@@ -77,7 +83,8 @@ void MemoryModel::readChunk(size_t location, size_t length, uint8_t *dst) const
             memcpy(dst, data + bank * 0x4000 + location - 0x4000, length);
             break;
         }
-        case 0x8: case 0x9: {
+        case 0x8:
+        case 0x9: {
             uint16_t bank = 0;
             size_t size = 0;
             auto *data = static_cast<uint8_t *>(GB_get_direct_access(gb, GB_DIRECT_ACCESS_VRAM, &size, &bank));
@@ -87,7 +94,8 @@ void MemoryModel::readChunk(size_t location, size_t length, uint8_t *dst) const
             memcpy(dst, data + bank * 0x2000 + location - 0x8000, length);
             break;
         }
-        case 0xA: case 0xB: {
+        case 0xA:
+        case 0xB: {
             // Some carts are special, use memory read directly in full mem mode
             if (m_mode == EntireSpace) {
                 slowPath();
@@ -108,7 +116,8 @@ void MemoryModel::readChunk(size_t location, size_t length, uint8_t *dst) const
             memcpy(dst, data + bank * 0x2000 + location - 0xA000, length);
             break;
         }
-        case 0xC: case 0xE: {
+        case 0xC:
+        case 0xE: {
             auto *data = static_cast<uint8_t *>(GB_get_direct_access(gb, GB_DIRECT_ACCESS_RAM, nullptr, nullptr));
             memcpy(dst, data + (location & 0xFFF), length);
             break;
@@ -123,9 +132,7 @@ void MemoryModel::readChunk(size_t location, size_t length, uint8_t *dst) const
             memcpy(dst, data + bank * 0x1000 + location - 0xD000, length);
             break;
         }
-        case 0xF:
-            slowPath();
-            break;
+        case 0xF: slowPath(); break;
     }
 }
 
@@ -140,8 +147,14 @@ void MemoryModel::writeChunk(size_t location, const uint8_t *src, size_t length)
         });
     };
     switch (location >> 12) {
-        case 0x0: case 0x1: case 0x2: case 0x3:
-        case 0x4: case 0x5: case 0x6: case 0x7: {
+        case 0x0:
+        case 0x1:
+        case 0x2:
+        case 0x3:
+        case 0x4:
+        case 0x5:
+        case 0x6:
+        case 0x7: {
             uint16_t bank = 0;
             size_t size = 0;
             auto *data = static_cast<uint8_t *>(GB_get_direct_access(
@@ -153,7 +166,8 @@ void MemoryModel::writeChunk(size_t location, const uint8_t *src, size_t length)
             m_session->setROMModified();
             break;
         }
-        case 0x8: case 0x9: {
+        case 0x8:
+        case 0x9: {
             uint16_t bank = 0;
             size_t size = 0;
             auto *data = static_cast<uint8_t *>(GB_get_direct_access(gb, GB_DIRECT_ACCESS_VRAM, &size, &bank));
@@ -163,7 +177,8 @@ void MemoryModel::writeChunk(size_t location, const uint8_t *src, size_t length)
             memcpy(data + bank * 0x2000 + location - 0x8000, src, length);
             break;
         }
-        case 0xA: case 0xB: {
+        case 0xA:
+        case 0xB: {
             if (m_mode == EntireSpace) {
                 slowPath();
                 break;
@@ -182,7 +197,8 @@ void MemoryModel::writeChunk(size_t location, const uint8_t *src, size_t length)
             memcpy(data + bank * 0x2000 + location - 0xA000, src, length);
             break;
         }
-        case 0xC: case 0xE: {
+        case 0xC:
+        case 0xE: {
             auto *data = static_cast<uint8_t *>(GB_get_direct_access(gb, GB_DIRECT_ACCESS_RAM, nullptr, nullptr));
             memcpy(data + (location & 0xFFF), src, length);
             break;
@@ -197,8 +213,6 @@ void MemoryModel::writeChunk(size_t location, const uint8_t *src, size_t length)
             memcpy(data + bank * 0x1000 + location - 0xD000, src, length);
             break;
         }
-        case 0xF:
-            slowPath();
-            break;
+        case 0xF: slowPath(); break;
     }
 }

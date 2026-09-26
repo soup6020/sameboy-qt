@@ -77,10 +77,7 @@ private slots:
         QVERIFY(SDL_Init(SDL_INIT_AUDIO));
     }
 
-    void cleanupTestCase()
-    {
-        SDL_Quit();
-    }
+    void cleanupTestCase() { SDL_Quit(); }
 
     void settingsDefaults()
     {
@@ -367,9 +364,8 @@ private slots:
         auto session = openSession();
         QVERIFY(session);
         uint16_t result = 0, bank = 0;
-        const QString error = session->captureOutput([&] {
-            QVERIFY(!GB_debugger_evaluate(session->gb(), "$10 + 5", &result, &bank));
-        });
+        const QString error =
+            session->captureOutput([&] { QVERIFY(!GB_debugger_evaluate(session->gb(), "$10 + 5", &result, &bank)); });
         QCOMPARE(result, uint16_t(0x15));
         QVERIFY(error.isEmpty());
     }

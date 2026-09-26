@@ -31,7 +31,7 @@ private:
     void pickColor(int index);
     void addTheme();
     void deleteTheme();
-    void renameTheme(const QString &oldName, const QString &newName);
+    void renameTheme(const QString &oldName, const QString &requested);
     void exportTheme();
     void importTheme();
     void restoreDefaults();

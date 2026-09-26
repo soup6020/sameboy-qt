@@ -2,8 +2,8 @@
 
 #include <QHash>
 #include <QObject>
-#include <QPointer>
 #include <QPointF>
+#include <QPointer>
 #include <QVector3D>
 
 #include <atomic>

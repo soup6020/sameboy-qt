@@ -3,13 +3,13 @@
 #include "ui/AppController.h"
 #include "ui/MainWindow.h"
 
+#include <QAction>
 #include <QApplication>
 #include <QCommandLineParser>
-#include <QSurfaceFormat>
-#include <QTimer>
-#include <QAction>
 #include <QMenu>
+#include <QSurfaceFormat>
 #include <QTabWidget>
+#include <QTimer>
 #include <QWidget>
 
 #include <SDL3/SDL.h>
@@ -76,7 +76,8 @@ int main(int argc, char **argv)
     QCommandLineOption durationOption(QStringLiteral("duration"),
                                       QStringLiteral("Milliseconds to run in --screenshot mode (default 5000)."),
                                       QStringLiteral("ms"), QStringLiteral("5000"));
-    QCommandLineOption dumpSettingsOption(QStringLiteral("dump-settings"), QStringLiteral("Print all settings and exit."));
+    QCommandLineOption dumpSettingsOption(QStringLiteral("dump-settings"),
+                                          QStringLiteral("Print all settings and exit."));
     parser.addOption(screenshotOption);
     parser.addOption(durationOption);
     parser.addOption(dumpSettingsOption);
@@ -89,8 +90,8 @@ int main(int argc, char **argv)
         for (const QString &key : settings.allKeys()) {
             const QVariant value = settings.value(key);
             const QString text = value.typeId() == QMetaType::QVariantMap
-                                     ? QStringLiteral("{%1 entries}").arg(value.toMap().size())
-                                     : value.toString();
+                ? QStringLiteral("{%1 entries}").arg(value.toMap().size())
+                : value.toString();
             printf("%s = %s\n", qPrintable(key), qPrintable(text));
         }
         SDL_Quit();
@@ -103,7 +104,8 @@ int main(int argc, char **argv)
             fprintf(stderr, "--screenshot needs exactly one ROM\n");
             return 1;
         }
-        const int result = runHeadless(files.first(), parser.value(screenshotOption), parser.value(durationOption).toInt());
+        const int result =
+            runHeadless(files.first(), parser.value(screenshotOption), parser.value(durationOption).toInt());
         SDL_Quit();
         return result;
     }
@@ -151,7 +153,8 @@ int main(int argc, char **argv)
                 if (!widget->isVisible()) {
                     continue;
                 }
-                const QString name = QStringLiteral("%1-%2-%3").arg(prefix).arg(index++).arg(widget->metaObject()->className());
+                const QString name =
+                    QStringLiteral("%1-%2-%3").arg(prefix).arg(index++).arg(widget->metaObject()->className());
                 widget->grab().save(name + QStringLiteral(".png"));
                 for (QTabWidget *tabs : widget->findChildren<QTabWidget *>()) {
                     for (int tab = 1; tab < tabs->count(); tab++) {

@@ -4,8 +4,7 @@
 #include <QKeyEvent>
 #include <QPainter>
 
-ConsoleInput::ConsoleInput(GB_gameboy_t *gb, QWidget *parent)
-    : QLineEdit(parent), m_gb(gb)
+ConsoleInput::ConsoleInput(GB_gameboy_t *gb, QWidget *parent) : QLineEdit(parent), m_gb(gb)
 {
     connect(this, &QLineEdit::returnPressed, this, [this] {
         const QString line = text();
@@ -71,7 +70,7 @@ void ConsoleInput::complete()
 void ConsoleInput::keyPressEvent(QKeyEvent *event)
 {
     const bool control = (event->modifiers() & (Qt::ControlModifier | Qt::MetaModifier)) &&
-                         !(event->modifiers() & (Qt::AltModifier | Qt::ShiftModifier));
+        !(event->modifiers() & (Qt::AltModifier | Qt::ShiftModifier));
     if (control && event->key() == Qt::Key_R) {
         if (m_lines.isEmpty()) {
             QApplication::beep();

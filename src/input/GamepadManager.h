@@ -13,8 +13,21 @@ struct SDL_Gamepad;
 // Cocoa frontend understands (GBView.m / GBPreferencesWindow.m).
 enum class GamepadAction : int {
     None = 0,
-    Right, Left, Up, Down, A, B, Select, Start, RapidA, RapidB,
-    Turbo, Rewind, Underclock, Hotkey1, Hotkey2,
+    Right,
+    Left,
+    Up,
+    Down,
+    A,
+    B,
+    Select,
+    Start,
+    RapidA,
+    RapidB,
+    Turbo,
+    Rewind,
+    Underclock,
+    Hotkey1,
+    Hotkey2,
 };
 
 GamepadAction gamepadActionForButton(int gbButton); // GBButton index -> action

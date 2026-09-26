@@ -29,7 +29,9 @@ constexpr uint32_t kMagic = 0x5342504C; // 'SBPL' as a clang multichar constant
 struct SbpTheme {
     uint32_t magic;
     uint8_t flags; // bit 0: manual, bit 1: disabled_lcd_color
-    struct { uint8_t r, g, b; } colors[5];
+    struct {
+        uint8_t r, g, b;
+    } colors[5];
     int32_t brightnessBias;
     uint32_t hueBias;
     uint32_t hueBiasStrength;
@@ -44,8 +46,7 @@ double blend(double from, double to, double position)
 
 } // namespace
 
-PaletteEditorDialog::PaletteEditorDialog(QWidget *parent)
-    : QDialog(parent)
+PaletteEditorDialog::PaletteEditorDialog(QWidget *parent) : QDialog(parent)
 {
     setWindowTitle(tr("Palette Editor"));
     m_themesList = new QListWidget;
@@ -111,9 +112,8 @@ PaletteEditorDialog::PaletteEditorDialog(QWidget *parent)
     connect(add, &QToolButton::clicked, this, &PaletteEditorDialog::addTheme);
     connect(remove, &QToolButton::clicked, this, &PaletteEditorDialog::deleteTheme);
     connect(m_themesList, &QListWidget::currentRowChanged, this, &PaletteEditorDialog::selectionChanged);
-    connect(m_themesList, &QListWidget::itemChanged, this, [this](QListWidgetItem *item) {
-        renameTheme(item->data(Qt::UserRole).toString(), item->text());
-    });
+    connect(m_themesList, &QListWidget::itemChanged, this,
+            [this](QListWidgetItem *item) { renameTheme(item->data(Qt::UserRole).toString(), item->text()); });
     connect(m_disableLCDColorCheckbox, &QCheckBox::toggled, this, [this] {
         if (!m_loading) {
             updateEnabledControls();
@@ -174,21 +174,24 @@ void PaletteEditorDialog::selectionChanged()
     if (m_loading || !m_themesList->currentItem()) {
         return;
     }
-    Settings::instance().setValue(QStringLiteral("GBCurrentTheme"), m_themesList->currentItem()->data(Qt::UserRole).toString());
+    Settings::instance().setValue(QStringLiteral("GBCurrentTheme"),
+                                  m_themesList->currentItem()->data(Qt::UserRole).toString());
     loadPalette();
 }
 
 void PaletteEditorDialog::setColor(int index, const QColor &color)
 {
     m_colors[index] = color;
-    m_colorWells[index]->setStyleSheet(QStringLiteral("background-color: %1; border: 1px solid palette(mid);").arg(color.name()));
+    m_colorWells[index]->setStyleSheet(
+        QStringLiteral("background-color: %1; border: 1px solid palette(mid);").arg(color.name()));
 }
 
 void PaletteEditorDialog::loadPalette()
 {
     Settings &settings = Settings::instance();
-    const QVariantMap theme =
-        settings.mapValue(QStringLiteral("GBThemes")).value(settings.stringValue(QStringLiteral("GBCurrentTheme"))).toMap();
+    const QVariantMap theme = settings.mapValue(QStringLiteral("GBThemes"))
+                                  .value(settings.stringValue(QStringLiteral("GBCurrentTheme")))
+                                  .toMap();
     m_loading = true;
     const QVariantList colors = theme.value(QStringLiteral("Colors")).toList();
     if (colors.size() == 5) {
@@ -348,7 +351,8 @@ void PaletteEditorDialog::exportTheme()
     }
     SbpTheme theme{};
     theme.magic = qToLittleEndian(kMagic);
-    theme.flags = uint8_t((m_manualModeCheckbox->isChecked() ? 1 : 0) | (m_disableLCDColorCheckbox->isChecked() ? 2 : 0));
+    theme.flags =
+        uint8_t((m_manualModeCheckbox->isChecked() ? 1 : 0) | (m_disableLCDColorCheckbox->isChecked() ? 2 : 0));
     for (int i = 0; i < 5; i++) {
         theme.colors[i] = {uint8_t(m_colors[i].red()), uint8_t(m_colors[i].green()), uint8_t(m_colors[i].blue())};
     }
@@ -360,14 +364,16 @@ void PaletteEditorDialog::exportTheme()
         size = m_disableLCDColorCheckbox->isChecked() ? 5 + 5 * 3 : 5 + 4 * 3;
     }
     QFile file(path);
-    if (!file.open(QIODevice::WriteOnly) || file.write(reinterpret_cast<const char *>(&theme), qint64(size)) != qint64(size)) {
+    if (!file.open(QIODevice::WriteOnly) ||
+        file.write(reinterpret_cast<const char *>(&theme), qint64(size)) != qint64(size)) {
         QApplication::beep();
     }
 }
 
 void PaletteEditorDialog::importTheme()
 {
-    const QString path = QFileDialog::getOpenFileName(this, tr("Import Palette"), QString(), tr("SameBoy Palette (*.sbp)"));
+    const QString path =
+        QFileDialog::getOpenFileName(this, tr("Import Palette"), QString(), tr("SameBoy Palette (*.sbp)"));
     if (path.isEmpty()) {
         return;
     }
@@ -392,7 +398,8 @@ void PaletteEditorDialog::importTheme()
     if (!(theme.flags & 2)) {
         setColor(4, m_colors[3]);
     }
-    m_brightnessSlider->setValue(int(std::round(int32_t(qFromLittleEndian(theme.brightnessBias)) / (0x40000000 / 128.0) + 128)));
+    m_brightnessSlider->setValue(
+        int(std::round(int32_t(qFromLittleEndian(theme.brightnessBias)) / (0x40000000 / 128.0) + 128)));
     m_hueSlider->setValue(int(std::round(qFromLittleEndian(theme.hueBias) / (0x80000000 / 360.0))));
     m_hueStrengthSlider->setValue(int(std::round(qFromLittleEndian(theme.hueBiasStrength) / (0x80000000 / 256.0))));
     m_loading = false;

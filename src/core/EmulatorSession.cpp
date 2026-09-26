@@ -13,6 +13,7 @@
 
 #include <cerrno>
 #include <cstring>
+#include <memory>
 
 #ifdef Q_OS_UNIX
 #include <fcntl.h>
@@ -88,7 +89,7 @@ EmulatorSession::EmulatorSession(const QString &path, QObject *parent)
         sample = 0;
     }
     for (auto &buffer : m_buffers) {
-        buffer.reset(new uint32_t[kMaxScreenPixels]());
+        buffer = std::make_unique<uint32_t[]>(kMaxScreenPixels);
     }
     m_gb = GB_alloc();
     m_volume = Settings::instance().doubleValue(QStringLiteral("GBVolume"));
@@ -125,13 +126,11 @@ GB_model_t EmulatorSession::internalModel() const
 {
     Settings &settings = Settings::instance();
     switch (m_currentModel) {
-        case EmulatedModel::DMG:
-            return GB_model_t(settings.intValue(QStringLiteral("GBDMGModel")));
+        case EmulatedModel::DMG: return GB_model_t(settings.intValue(QStringLiteral("GBDMGModel")));
         case EmulatedModel::None:
         case EmulatedModel::QuickReset:
         case EmulatedModel::Auto:
-        case EmulatedModel::CGB:
-            return GB_model_t(settings.intValue(QStringLiteral("GBCGBModel")));
+        case EmulatedModel::CGB: return GB_model_t(settings.intValue(QStringLiteral("GBCGBModel")));
         case EmulatedModel::SGB: {
             int model = settings.intValue(QStringLiteral("GBSGBModel"));
             if (model == (GB_MODEL_SGB | GB_MODEL_PAL_BIT_OLD)) {
@@ -139,10 +138,8 @@ GB_model_t EmulatorSession::internalModel() const
             }
             return GB_model_t(model);
         }
-        case EmulatedModel::MGB:
-            return GB_MODEL_MGB;
-        case EmulatedModel::AGB:
-            return GB_model_t(settings.intValue(QStringLiteral("GBAGBModel")));
+        case EmulatedModel::MGB: return GB_MODEL_MGB;
+        case EmulatedModel::AGB: return GB_model_t(settings.intValue(QStringLiteral("GBAGBModel")));
     }
     return GB_MODEL_CGB_E;
 }
@@ -201,27 +198,28 @@ void EmulatorSession::initCommon()
     settings.observe(this, QStringLiteral("GBColorCorrection"), [gb](const QVariant &value) {
         GB_set_color_correction_mode(gb, GB_color_correction_mode_t(value.toInt()));
     });
-    settings.observe(this, QStringLiteral("GBLightTemperature"), [gb](const QVariant &value) {
-        GB_set_light_temperature(gb, value.toDouble());
-    });
-    settings.observe(this, QStringLiteral("GBInterferenceVolume"), [gb](const QVariant &value) {
-        GB_set_interference_volume(gb, value.toDouble());
-    });
+    settings.observe(this, QStringLiteral("GBLightTemperature"),
+                     [gb](const QVariant &value) { GB_set_light_temperature(gb, value.toDouble()); });
+    settings.observe(this, QStringLiteral("GBInterferenceVolume"),
+                     [gb](const QVariant &value) { GB_set_interference_volume(gb, value.toDouble()); });
     m_borderMode = settings.intValue(QStringLiteral("GBBorderMode"));
     GB_set_border_mode(m_gb, GB_border_mode_t(m_borderMode.load()));
-    settings.observe(this, QStringLiteral("GBBorderMode"), [this](const QVariant &value) {
-        m_borderMode = value.toInt();
-        m_borderModeChanged = true;
-        if (!m_running) {
-            // Not running: apply now, the emulation thread won't do it for us.
-            unsigned previousWidth = GB_get_screen_width(m_gb);
-            GB_set_border_mode(m_gb, GB_border_mode_t(m_borderMode.load()));
-            m_borderModeChanged = false;
-            if (GB_get_screen_width(m_gb) != previousWidth) {
-                emit screenSizeChanged();
+    settings.observe(
+        this, QStringLiteral("GBBorderMode"),
+        [this](const QVariant &value) {
+            m_borderMode = value.toInt();
+            m_borderModeChanged = true;
+            if (!m_running) {
+                // Not running: apply now, the emulation thread won't do it for us.
+                unsigned previousWidth = GB_get_screen_width(m_gb);
+                GB_set_border_mode(m_gb, GB_border_mode_t(m_borderMode.load()));
+                m_borderModeChanged = false;
+                if (GB_get_screen_width(m_gb) != previousWidth) {
+                    emit screenSizeChanged();
+                }
             }
-        }
-    }, false);
+        },
+        false);
     settings.observe(this, QStringLiteral("GBHighpassFilter"), [gb](const QVariant &value) {
         GB_set_highpass_filter_mode(gb, GB_highpass_mode_t(value.toInt()));
     });
@@ -229,12 +227,10 @@ void EmulatorSession::initCommon()
         const double length = value.toDouble();
         performAtomic([this, length] { GB_set_rewind_length(m_gb, length); });
     });
-    settings.observe(this, QStringLiteral("GBRTCMode"), [gb](const QVariant &value) {
-        GB_set_rtc_mode(gb, GB_rtc_mode_t(value.toInt()));
-    });
-    settings.observe(this, QStringLiteral("GBRumbleMode"), [gb](const QVariant &value) {
-        GB_set_rumble_mode(gb, GB_rumble_mode_t(value.toInt()));
-    });
+    settings.observe(this, QStringLiteral("GBRTCMode"),
+                     [gb](const QVariant &value) { GB_set_rtc_mode(gb, GB_rtc_mode_t(value.toInt())); });
+    settings.observe(this, QStringLiteral("GBRumbleMode"),
+                     [gb](const QVariant &value) { GB_set_rumble_mode(gb, GB_rumble_mode_t(value.toInt())); });
     settings.observe(this, QStringLiteral("GBTurboCap"), [this](const QVariant &value) {
         if (!m_master) {
             GB_set_turbo_cap(m_gb, value.toDouble());
@@ -244,9 +240,7 @@ void EmulatorSession::initCommon()
         m_frameBlendingMode = value.toInt();
         emit frameReady();
     });
-    settings.observe(this, QStringLiteral("GBVolume"), [this](const QVariant &value) {
-        m_volume = value.toDouble();
-    });
+    settings.observe(this, QStringLiteral("GBVolume"), [this](const QVariant &value) { m_volume = value.toDouble(); });
     for (const char *key : {"GBColorPalette", "GBCurrentTheme", "GBThemes"}) {
         settings.observe(this, QString::fromLatin1(key), [this](const QVariant &) { updatePalette(); }, false);
     }
@@ -259,11 +253,14 @@ void EmulatorSession::initCommon()
     };
     for (const auto &[key, model] : revisionKeys) {
         const EmulatedModel family = model;
-        settings.observe(this, QString::fromLatin1(key), [this, family](const QVariant &) {
-            if (m_currentModel == family) {
-                reset();
-            }
-        }, false);
+        settings.observe(
+            this, QString::fromLatin1(key),
+            [this, family](const QVariant &) {
+                if (m_currentModel == family) {
+                    reset();
+                }
+            },
+            false);
     }
 }
 
@@ -585,11 +582,10 @@ void EmulatorSession::startAudio()
 {
     std::lock_guard lock(m_audioClientMutex);
     if (!m_audio) {
-        m_audio = std::make_unique<AudioOutput>(
-            [this](unsigned sampleRate, unsigned frames, GB_sample_t *buffer) {
-                renderAudio(sampleRate, frames, buffer);
-            },
-            kSampleRate);
+        m_audio =
+            std::make_unique<AudioOutput>([this](unsigned sampleRate, unsigned frames,
+                                                 GB_sample_t *buffer) { renderAudio(sampleRate, frames, buffer); },
+                                          kSampleRate);
     }
     m_audioPlaying = m_audio->start();
 }
@@ -629,9 +625,9 @@ void EmulatorSession::postRun()
         QString friendlyName = QFileInfo(m_path).completeBaseName();
         static const QRegularExpression tags(QStringLiteral("\\([^)]+\\)|\\[[^\\]]+\\]"));
         friendlyName = friendlyName.remove(tags).trimmed();
-        QMetaObject::invokeMethod(this, [this, timeToAlarm, friendlyName] {
-            emit alarmScheduled(timeToAlarm, friendlyName);
-        }, Qt::QueuedConnection);
+        QMetaObject::invokeMethod(
+            this, [this, timeToAlarm, friendlyName] { emit alarmScheduled(timeToAlarm, friendlyName); },
+            Qt::QueuedConnection);
     }
     QMetaObject::invokeMethod(this, [this] { emit rumble(0); }, Qt::QueuedConnection);
 }
@@ -785,7 +781,9 @@ bool EmulatorSession::hotSwap(const QString &path, QString *error)
         if (session != this && session->m_path == absolute) {
             if (error) {
                 const QString name = QFileInfo(path).fileName();
-                *error = tr("‘%1’ is already open in another window. Close ‘%1’ before hot swapping it into this instance.").arg(name);
+                *error =
+                    tr("‘%1’ is already open in another window. Close ‘%1’ before hot swapping it into this instance.")
+                        .arg(name);
             }
             return false;
         }
@@ -875,10 +873,13 @@ void EmulatorSession::vblank(GB_vblank_type_t type)
     }
 
     if (!m_frameSignalPending.exchange(true)) {
-        QMetaObject::invokeMethod(this, [this] {
-            m_frameSignalPending = false;
-            emit frameReady();
-        }, Qt::QueuedConnection);
+        QMetaObject::invokeMethod(
+            this,
+            [this] {
+                m_frameSignalPending = false;
+                emit frameReady();
+            },
+            Qt::QueuedConnection);
     }
 
     if (m_rewindHeld) {
@@ -888,7 +889,6 @@ void EmulatorSession::vblank(GB_vblank_type_t type)
 }
 
 // MARK: - Audio
-
 
 void EmulatorSession::gotSample(GB_sample_t *sample)
 {
@@ -1061,7 +1061,8 @@ bool EmulatorSession::writeROM(const QString &path)
     size_t size = 0;
     const auto *data = static_cast<const char *>(GB_get_direct_access(m_gb, GB_DIRECT_ACCESS_ROM, &size, nullptr));
     QFile file(target);
-    if (!data || !file.open(QIODevice::WriteOnly | QIODevice::Truncate) || file.write(data, qint64(size)) != qint64(size)) {
+    if (!data || !file.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
+        file.write(data, qint64(size)) != qint64(size)) {
         return false;
     }
     m_romModified = false;
@@ -1087,9 +1088,8 @@ void EmulatorSession::log(const char *string, GB_log_attributes_t attributes)
         m_pendingConsole.append({text, attributes, m_logToSideView});
     }
     if (!m_consoleFlushPending.exchange(true)) {
-        QMetaObject::invokeMethod(this, [this] {
-            QTimer::singleShot(50, this, &EmulatorSession::flushConsole);
-        }, Qt::QueuedConnection);
+        QMetaObject::invokeMethod(
+            this, [this] { QTimer::singleShot(50, this, &EmulatorSession::flushConsole); }, Qt::QueuedConnection);
     }
 }
 
@@ -1130,7 +1130,7 @@ void EmulatorSession::queueDebuggerCommand(const QString &command)
     log("\n", GB_log_attributes_t(0));
     {
         std::lock_guard lock(m_debuggerMutex);
-        m_debuggerQueue.push_back(command);
+        m_debuggerQueue.emplace_back(command);
     }
     m_debuggerCondition.notify_all();
 }
@@ -1138,7 +1138,7 @@ void EmulatorSession::queueDebuggerCommand(const QString &command)
 void EmulatorSession::interruptDebugInputRead()
 {
     std::lock_guard lock(m_debuggerMutex);
-    m_debuggerQueue.push_back(std::nullopt);
+    m_debuggerQueue.emplace_back(std::nullopt);
     m_debuggerCondition.notify_all();
 }
 
@@ -1220,23 +1220,26 @@ char *EmulatorSession::debuggerInput()
         std::lock_guard lock(m_consoleMutex);
         m_shouldClearSideView = true;
     }
-    QMetaObject::invokeMethod(this, [this] {
-        QTimer::singleShot(100, this, [this] {
-            bool clear = false;
-            {
-                std::lock_guard lock(m_consoleMutex);
-                clear = m_shouldClearSideView;
-                m_shouldClearSideView = false;
-            }
-            if (clear) {
-                emit consoleOutput({}, true);
-            }
-            emit debuggerStateChanged();
-            if (EmulatorSession *other = partner()) {
-                emit other->debuggerStateChanged();
-            }
-        });
-    }, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(
+        this,
+        [this] {
+            QTimer::singleShot(100, this, [this] {
+                bool clear = false;
+                {
+                    std::lock_guard lock(m_consoleMutex);
+                    clear = m_shouldClearSideView;
+                    m_shouldClearSideView = false;
+                }
+                if (clear) {
+                    emit consoleOutput({}, true);
+                }
+                emit debuggerStateChanged();
+                if (EmulatorSession *other = partner()) {
+                    emit other->debuggerStateChanged();
+                }
+            });
+        },
+        Qt::QueuedConnection);
     if (wasPlaying) {
         startAudio();
     }
@@ -1520,9 +1523,9 @@ void EmulatorSession::workboySetTime(GB_gameboy_t *, time_t t)
 {
     const qint64 offset = qint64(time(nullptr)) - qint64(t);
     g_workboyTimeOffset = offset;
-    QMetaObject::invokeMethod(qApp, [offset] {
-        Settings::instance().setValue(QStringLiteral("GBWorkboyTimeOffset"), offset);
-    }, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(
+        qApp, [offset] { Settings::instance().setValue(QStringLiteral("GBWorkboyTimeOffset"), offset); },
+        Qt::QueuedConnection);
 }
 
 time_t EmulatorSession::workboyGetTime(GB_gameboy_t *)

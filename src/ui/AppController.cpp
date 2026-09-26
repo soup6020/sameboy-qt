@@ -161,9 +161,10 @@ void AppController::showAbout()
     box.setWindowTitle(tr("About SameBoy"));
     box.setIconPixmap(QPixmap(QStringLiteral(":/icon.png")));
     box.setText(QStringLiteral("<h2>SameBoy</h2><p>Version %1 (Qt frontend)</p>").arg(QStringLiteral(GB_VERSION)));
-    box.setInformativeText(tr("Copyright © 2015-%1 Lior Halphon<br>Qt frontend built on the unmodified SameBoy core.<br>"
-                              "<a href=\"https://sameboy.github.io\">sameboy.github.io</a>")
-                               .arg(QStringLiteral(GB_COPYRIGHT_YEAR)));
+    box.setInformativeText(
+        tr("Copyright © 2015-%1 Lior Halphon<br>Qt frontend built on the unmodified SameBoy core.<br>"
+           "<a href=\"https://sameboy.github.io\">sameboy.github.io</a>")
+            .arg(QStringLiteral(GB_COPYRIGHT_YEAR)));
     box.setTextFormat(Qt::RichText);
     box.setDetailedText(ResourceLocator::licenseText());
     box.exec();

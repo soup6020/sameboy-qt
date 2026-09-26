@@ -1,0 +1,5 @@
+CompileFlags:
+  CompilationDatabase: build
+  # compile_commands.json comes from GCC; drop flags clang doesn't know.
+  Remove: [-fno-lto, -Wno-format-truncation, -Wno-maybe-uninitialized]
+  Add: [-Wno-unknown-warning-option]

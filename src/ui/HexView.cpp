@@ -7,8 +7,7 @@
 
 #include <vector>
 
-HexView::HexView(MemoryModel *model, QWidget *parent)
-    : QAbstractScrollArea(parent), m_model(model)
+HexView::HexView(MemoryModel *model, QWidget *parent) : QAbstractScrollArea(parent), m_model(model)
 {
     setFocusPolicy(Qt::StrongFocus);
     viewport()->setCursor(Qt::IBeamCursor);
@@ -126,13 +125,16 @@ void HexView::paintEvent(QPaintEvent *)
                 const QColor highlight = pal.color(hasFocus() ? QPalette::Highlight : QPalette::Mid);
                 QColor faint = highlight;
                 faint.setAlphaF(0.35);
-                painter.fillRect(QRect(hexX - 1, y, m_charWidth * 2 + 2, m_lineHeight), m_asciiColumn ? faint : highlight);
+                painter.fillRect(QRect(hexX - 1, y, m_charWidth * 2 + 2, m_lineHeight),
+                                 m_asciiColumn ? faint : highlight);
                 painter.fillRect(QRect(asciiX, y, m_charWidth, m_lineHeight), m_asciiColumn ? highlight : faint);
             }
-            painter.setPen(offset == m_cursor && !m_asciiColumn ? pal.color(QPalette::HighlightedText) : pal.color(QPalette::Text));
+            painter.setPen(offset == m_cursor && !m_asciiColumn ? pal.color(QPalette::HighlightedText)
+                                                                : pal.color(QPalette::Text));
             painter.drawText(hexX, y + ascent, QStringLiteral("%1").arg(value, 2, 16, QLatin1Char('0')).toUpper());
             const QChar character = (value >= 0x20 && value < 0x7F) ? QChar(value) : QLatin1Char('.');
-            painter.setPen(offset == m_cursor && m_asciiColumn ? pal.color(QPalette::HighlightedText) : pal.color(QPalette::Text));
+            painter.setPen(offset == m_cursor && m_asciiColumn ? pal.color(QPalette::HighlightedText)
+                                                               : pal.color(QPalette::Text));
             painter.drawText(asciiX, y + ascent, QString(character));
         }
     }
@@ -141,7 +143,7 @@ void HexView::paintEvent(QPaintEvent *)
 void HexView::mousePressEvent(QMouseEvent *event)
 {
     const QPoint pos = event->pos();
-    const size_t line = size_t(verticalScrollBar()->value() + pos.y() / m_lineHeight);
+    const size_t line = size_t(verticalScrollBar()->value()) + size_t(pos.y() / m_lineHeight);
     int column = -1;
     if (pos.x() >= m_asciiX) {
         column = (pos.x() - m_asciiX) / m_charWidth;
@@ -175,29 +177,26 @@ void HexView::keyPressEvent(QKeyEvent *event)
                 setCursorOffset(m_cursor - 1);
             }
             return;
-        case Qt::Key_Right:
-            setCursorOffset(m_cursor + 1);
-            return;
+        case Qt::Key_Right: setCursorOffset(m_cursor + 1); return;
         case Qt::Key_Up:
             if (m_cursor >= kBytesPerLine) {
                 setCursorOffset(m_cursor - kBytesPerLine);
             }
             return;
-        case Qt::Key_Down:
-            setCursorOffset(m_cursor + kBytesPerLine);
-            return;
+        case Qt::Key_Down: setCursorOffset(m_cursor + kBytesPerLine); return;
         case Qt::Key_PageUp:
-            setCursorOffset(m_cursor > size_t(visibleLines() * kBytesPerLine) ? m_cursor - size_t(visibleLines() * kBytesPerLine) : 0);
+            setCursorOffset(m_cursor > size_t(visibleLines()) * kBytesPerLine
+                                ? m_cursor - size_t(visibleLines()) * kBytesPerLine
+                                : 0);
             return;
-        case Qt::Key_PageDown:
-            setCursorOffset(m_cursor + size_t(visibleLines() * kBytesPerLine));
-            return;
+        case Qt::Key_PageDown: setCursorOffset(m_cursor + size_t(visibleLines()) * kBytesPerLine); return;
         case Qt::Key_Home:
             setCursorOffset(event->modifiers() & Qt::ControlModifier ? 0 : m_cursor - m_cursor % kBytesPerLine);
             return;
         case Qt::Key_End:
-            setCursorOffset(event->modifiers() & Qt::ControlModifier ? length - 1
-                                                                      : m_cursor - m_cursor % kBytesPerLine + kBytesPerLine - 1);
+            setCursorOffset(event->modifiers() & Qt::ControlModifier
+                                ? length - 1
+                                : m_cursor - m_cursor % kBytesPerLine + kBytesPerLine - 1);
             return;
         case Qt::Key_Tab:
         case Qt::Key_Backtab:

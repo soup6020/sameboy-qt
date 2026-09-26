@@ -66,7 +66,8 @@ void PrinterWindow::appendImage(const QImage &chunk)
         m_feed = combined;
     }
     m_spinner->show();
-    m_imageLabel->setPixmap(QPixmap::fromImage(m_feed.scaled(m_feed.size() * 2, Qt::IgnoreAspectRatio, Qt::FastTransformation)));
+    m_imageLabel->setPixmap(
+        QPixmap::fromImage(m_feed.scaled(m_feed.size() * 2, Qt::IgnoreAspectRatio, Qt::FastTransformation)));
     const int maxHeight = screen() ? screen()->availableGeometry().height() * 3 / 4 : 800;
     resize(width(), qMin(maxHeight, m_feed.height() * 2 + 80));
     m_scroll->verticalScrollBar()->setValue(m_scroll->verticalScrollBar()->maximum());

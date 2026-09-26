@@ -16,7 +16,6 @@
 
 #include <QActionGroup>
 
-#include <algorithm>
 #include <QApplication>
 #include <QClipboard>
 #include <QCloseEvent>
@@ -33,13 +32,18 @@
 #include <QToolTip>
 #include <QUrl>
 #include <QWindow>
+#include <algorithm>
 
 namespace {
 
 MainWindow *g_lastActiveWindow = nullptr;
 QList<MainWindow *> g_windows;
 
-enum ResizeAction { Zoom, Increase, Decrease };
+enum ResizeAction {
+    Zoom,
+    Increase,
+    Decrease
+};
 
 #ifdef Q_OS_MACOS
 // On macOS Qt maps Ctrl to ⌘ and Meta to ⌃, matching the Cocoa shortcuts.
@@ -80,7 +84,7 @@ MainWindow::MainWindow(const QString &path, QWidget *parent)
             return true;
         }
         return Settings::instance().boolValue(QStringLiteral("GBAllowBackgroundControllers")) &&
-               g_lastActiveWindow == this;
+            g_lastActiveWindow == this;
     });
     connect(m_input, &InputController::hotkey, this, &MainWindow::performHotkeyAction);
     connect(m_input, &InputController::controllerUsed, this, [this] {
@@ -91,20 +95,17 @@ MainWindow::MainWindow(const QString &path, QWidget *parent)
 
     m_camera = new CameraProvider(m_session, this);
 
-    connect(m_screen, &ScreenWidget::stateFileDropped, this, [this](const QString &file) {
-        m_session->loadStateFile(file, false);
-    });
+    connect(m_screen, &ScreenWidget::stateFileDropped, this,
+            [this](const QString &file) { m_session->loadStateFile(file, false); });
     connect(m_screen, &ScreenWidget::romFilesDropped, &AppController::instance(), &AppController::openFiles);
 
     connect(m_session, &EmulatorSession::screenSizeChanged, this, &MainWindow::updateMinimumSize);
     connect(m_session, &EmulatorSession::runningChanged, this, &MainWindow::updateMouseHiding);
     connect(m_session, &EmulatorSession::warning, this, &MainWindow::showWarning);
-    connect(m_session, &EmulatorSession::errorMessage, this, [this](const QString &message) {
-        QMessageBox::critical(this, windowTitle(), message);
-    });
-    connect(m_session, &EmulatorSession::romModifiedChanged, this, [this](bool modified) {
-        setWindowModified(modified);
-    });
+    connect(m_session, &EmulatorSession::errorMessage, this,
+            [this](const QString &message) { QMessageBox::critical(this, windowTitle(), message); });
+    connect(m_session, &EmulatorSession::romModifiedChanged, this,
+            [this](bool modified) { setWindowModified(modified); });
     connect(m_session, &EmulatorSession::gbsLoaded, this, &MainWindow::prepareGBSInterface);
     connect(m_session, &EmulatorSession::consoleOutput, this, [this](const QList<LogChunk> &chunks, bool clearSide) {
         if (!m_console && !Settings::instance().boolValue(QStringLiteral("DeveloperMode"))) {
@@ -228,7 +229,8 @@ void MainWindow::buildMenus()
     // File
     QMenu *file = bar->addMenu(tr("&File"));
     file->addAction(tr("&Open…"), QKeySequence::Open, &app, &AppController::showOpenDialog);
-    file->addAction(tr("Hot Swap Cartridge…"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_O), this, &MainWindow::cartSwap);
+    file->addAction(tr("Hot Swap Cartridge…"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_O), this,
+                    &MainWindow::cartSwap);
     file->addMenu(app.recentFilesMenu(file));
     file->addSeparator();
     file->addAction(tr("New Cartridge Instance…"), QKeySequence::New, this, &MainWindow::newCartridgeInstance);
@@ -250,9 +252,10 @@ void MainWindow::buildMenus()
     emulation->addAction(tr("Reset"), QKeySequence(Qt::CTRL | Qt::Key_R), this, [this] { reset(EmulatedModel::None); });
     emulation->addAction(tr("Quick Reset"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_R), this,
                          [this] { reset(EmulatedModel::QuickReset); });
-    m_reloadEmulationAction = emulation->addAction(tr("Reload ROM"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_R), this,
-                                                   &MainWindow::reloadROM);
-    m_pauseAction = emulation->addAction(tr("Pause"), QKeySequence(Qt::CTRL | Qt::Key_P), this, &MainWindow::togglePause);
+    m_reloadEmulationAction = emulation->addAction(tr("Reload ROM"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_R),
+                                                   this, &MainWindow::reloadROM);
+    m_pauseAction =
+        emulation->addAction(tr("Pause"), QKeySequence(Qt::CTRL | Qt::Key_P), this, &MainWindow::togglePause);
     m_pauseAction->setCheckable(true);
 
     QMenu *models = emulation->addMenu(tr("Emulated Model"));
@@ -284,7 +287,8 @@ void MainWindow::buildMenus()
     QMenu *loadStates = emulation->addMenu(tr("Load State"));
     for (unsigned slot = 1; slot <= 10; slot++) {
         const Qt::Key key = Qt::Key(Qt::Key_0 + slot % 10);
-        saveStates->addAction(tr("Slot %1").arg(slot), QKeySequence(Qt::CTRL | key), this, [this, slot] { saveState(slot); });
+        saveStates->addAction(tr("Slot %1").arg(slot), QKeySequence(Qt::CTRL | key), this,
+                              [this, slot] { saveState(slot); });
         loadStates->addAction(tr("Slot %1").arg(slot), QKeySequence(Qt::CTRL | Qt::SHIFT | key), this,
                               [this, slot] { loadState(slot); });
     }
@@ -295,16 +299,18 @@ void MainWindow::buildMenus()
     emulation->addAction(tr("Copy Screenshot"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_S), this,
                          &MainWindow::copyScreenshot);
     emulation->addSeparator();
-    m_audioRecordingAction = emulation->addAction(tr("Start Audio Recording…"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_A),
-                                                  this, &MainWindow::toggleAudioRecording);
-    m_muteAction = emulation->addAction(tr("Mute Sound"), QKeySequence(Qt::CTRL | Qt::Key_M), this, &MainWindow::toggleMute);
+    m_audioRecordingAction =
+        emulation->addAction(tr("Start Audio Recording…"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_A), this,
+                             &MainWindow::toggleAudioRecording);
+    m_muteAction =
+        emulation->addAction(tr("Mute Sound"), QKeySequence(Qt::CTRL | Qt::Key_M), this, &MainWindow::toggleMute);
     m_muteAction->setCheckable(true);
 
     // Cheats
     QMenu *cheats = bar->addMenu(tr("&Cheats"));
-    m_cheatsEnabledAction = cheats->addAction(tr("Enable Cheats"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C), this, [this] {
-        GB_set_cheats_enabled(m_session->gb(), !GB_cheats_enabled(m_session->gb()));
-    });
+    m_cheatsEnabledAction =
+        cheats->addAction(tr("Enable Cheats"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C), this,
+                          [this] { GB_set_cheats_enabled(m_session->gb(), !GB_cheats_enabled(m_session->gb())); });
     m_cheatsEnabledAction->setCheckable(true);
     cheats->addAction(tr("Show Cheats"), this, &MainWindow::showCheats);
     cheats->addAction(tr("Search Cheats"), this, &MainWindow::showCheatSearch);
@@ -331,14 +337,18 @@ void MainWindow::buildMenus()
     develop->addAction(tr("Show Console"), this, &MainWindow::showConsole);
     develop->addAction(tr("Clear Console"), QKeySequence(Qt::CTRL | Qt::Key_K), this, [this] { console()->clear(); });
     develop->addSeparator();
-    m_breakAction = develop->addAction(tr("Break Debugger"), QKeySequence(kBreakShortcut), this, &MainWindow::interrupt);
+    m_breakAction =
+        develop->addAction(tr("Break Debugger"), QKeySequence(kBreakShortcut), this, &MainWindow::interrupt);
     develop->addSeparator();
     QMenu *channels = develop->addMenu(tr("Audio Channels"));
-    const QString channelNames[] = {tr("Square Channel 1"), tr("Square Channel 2"), tr("Wave Channel"), tr("Noise Channel")};
+    const QString channelNames[] = {tr("Square Channel 1"), tr("Square Channel 2"), tr("Wave Channel"),
+                                    tr("Noise Channel")};
     for (int i = 0; i < 4; i++) {
-        m_channelActions[i] = channels->addAction(channelNames[i], QKeySequence(Qt::ALT | Qt::Key(Qt::Key_1 + i)), this, [this, i] {
-            GB_set_channel_muted(m_session->gb(), GB_channel_t(i), !GB_is_channel_muted(m_session->gb(), GB_channel_t(i)));
-        });
+        m_channelActions[i] =
+            channels->addAction(channelNames[i], QKeySequence(Qt::ALT | Qt::Key(Qt::Key_1 + i)), this, [this, i] {
+                GB_set_channel_muted(m_session->gb(), GB_channel_t(i),
+                                     !GB_is_channel_muted(m_session->gb(), GB_channel_t(i)));
+            });
         m_channelActions[i]->setCheckable(true);
     }
     develop->addSeparator();
@@ -363,21 +373,20 @@ void MainWindow::buildMenus()
     m_decreaseSizeAction = window->addAction(tr("Decrease Window Size"), QKeySequence(Qt::CTRL | Qt::Key_Minus), this,
                                              &MainWindow::decreaseWindowSize);
     window->addAction(tr("Zoom"), this, &MainWindow::zoom);
-    m_fullScreenAction = window->addAction(tr("Enter Full Screen"), QKeySequence::FullScreen, this, &MainWindow::toggleFullScreen);
+    m_fullScreenAction =
+        window->addAction(tr("Enter Full Screen"), QKeySequence::FullScreen, this, &MainWindow::toggleFullScreen);
     window->addSeparator();
     window->addAction(tr("Bring All to Front"), &app, &AppController::bringAllToFront);
 
     // Help
     QMenu *help = bar->addMenu(tr("&Help"));
-    help->addAction(tr("Debugger Help"), [] {
-        QDesktopServices::openUrl(QUrl(QStringLiteral("https://sameboy.github.io/debugger/")));
-    });
+    help->addAction(tr("Debugger Help"),
+                    [] { QDesktopServices::openUrl(QUrl(QStringLiteral("https://sameboy.github.io/debugger/"))); });
     help->addSeparator();
     QAction *about = help->addAction(tr("About SameBoy"), &app, &AppController::showAbout);
     about->setMenuRole(QAction::AboutRole);
-    help->addAction(tr("Sponsor SameBoy"), [] {
-        QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/sponsors/LIJI32")));
-    });
+    help->addAction(tr("Sponsor SameBoy"),
+                    [] { QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/sponsors/LIJI32"))); });
 
     for (QMenu *menu : {file, emulation, cheats, connectMenu, develop, window}) {
         connect(menu, &QMenu::aboutToShow, this, &MainWindow::updateMenuStates);
@@ -420,7 +429,8 @@ void MainWindow::updateMenuStates()
         }
     }
     m_linkMenu->setEnabled(EmulatorSession::allSessions().size() > 1);
-    m_audioRecordingAction->setText(m_session->isRecordingAudio() ? tr("Stop Audio Recording") : tr("Start Audio Recording…"));
+    m_audioRecordingAction->setText(m_session->isRecordingAudio() ? tr("Stop Audio Recording")
+                                                                  : tr("Start Audio Recording…"));
     m_increaseSizeAction->setEnabled(!m_gbsPlayer && newWindowSize(Increase, nullptr));
     m_decreaseSizeAction->setEnabled(!m_gbsPlayer && newWindowSize(Decrease, nullptr));
     m_reloadAction->setEnabled(!m_session->isGBS());
@@ -455,7 +465,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
     // NSDocument asks before discarding ROM modifications made in the memory viewer.
     if (m_session->isROMModified()) {
         const auto answer = QMessageBox::warning(
-            this, tr("SameBoy"), tr("Do you want to save the changes made to the ROM “%1”?").arg(m_session->displayName()),
+            this, tr("SameBoy"),
+            tr("Do you want to save the changes made to the ROM “%1”?").arg(m_session->displayName()),
             QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel, QMessageBox::Save);
         if (answer == QMessageBox::Cancel) {
             event->ignore();
@@ -475,9 +486,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
     QMainWindow::closeEvent(event);
     // Closing the last game returns to the idle window instead of quitting.
     if (event->isAccepted() && !AppController::instance().isQuitting() &&
-        std::none_of(g_windows.cbegin(), g_windows.cend(), [this](MainWindow *window) {
-            return window != this && window->isVisible();
-        })) {
+        std::none_of(g_windows.cbegin(), g_windows.cend(),
+                     [this](MainWindow *window) { return window != this && window->isVisible(); })) {
         AppController::instance().showWelcome();
     }
 }
@@ -720,7 +730,8 @@ void MainWindow::saveScreenshot()
     QString filename = QDir(folder).filePath(screenshotFilename());
     unsigned i = 2;
     while (QFileInfo::exists(filename)) {
-        filename = QDir(folder).filePath(QFileInfo(screenshotFilename()).completeBaseName() + QStringLiteral(" %1.png").arg(i++));
+        filename = QDir(folder).filePath(QFileInfo(screenshotFilename()).completeBaseName() +
+                                         QStringLiteral(" %1.png").arg(i++));
     }
     if (image.save(filename, "PNG")) {
         m_session->showOSD(tr("Screenshot saved"));
@@ -737,9 +748,9 @@ void MainWindow::saveScreenshotAs()
     const QImage image = takeScreenshot();
     Settings &settings = Settings::instance();
     const QString folder = settings.stringValue(QStringLiteral("GBScreenshotFolder"));
-    const QString path = QFileDialog::getSaveFileName(this, tr("Save Screenshot"),
-                                                      QDir(folder.isEmpty() ? QDir::homePath() : folder).filePath(screenshotFilename()),
-                                                      tr("PNG Image (*.png)"));
+    const QString path = QFileDialog::getSaveFileName(
+        this, tr("Save Screenshot"), QDir(folder.isEmpty() ? QDir::homePath() : folder).filePath(screenshotFilename()),
+        tr("PNG Image (*.png)"));
     if (!path.isEmpty()) {
         if (image.save(path, "PNG")) {
             settings.setValue(QStringLiteral("GBScreenshotFolder"), QFileInfo(path).path());
@@ -778,8 +789,9 @@ void MainWindow::toggleAudioRecording()
     const QString wav = tr("RIFF WAVE (*.wav)");
     const QString raw = tr("Raw PCM, Stereo 96KHz 16-bit LE (*.raw *.pcm)");
     QString selectedFilter = wav;
-    QString path = QFileDialog::getSaveFileName(this, tr("Start Audio Recording"), QFileInfo(filePath()).path(),
-                                                QStringList{aiff, wav, raw}.join(QStringLiteral(";;")), &selectedFilter);
+    QString path =
+        QFileDialog::getSaveFileName(this, tr("Start Audio Recording"), QFileInfo(filePath()).path(),
+                                     QStringList{aiff, wav, raw}.join(QStringLiteral(";;")), &selectedFilter);
     if (!path.isEmpty()) {
         GB_audio_format_t format = GB_AUDIO_FORMAT_WAV;
         QString extension = QStringLiteral("wav");
@@ -823,7 +835,8 @@ bool MainWindow::newWindowSize(int action, QSize *result) const
     if (action == Decrease && (content.width() <= width || content.height() <= height)) {
         return false;
     }
-    auto round = action == Decrease ? static_cast<double (*)(double)>(std::ceil) : static_cast<double (*)(double)>(std::floor);
+    auto round =
+        action == Decrease ? static_cast<double (*)(double)>(std::ceil) : static_cast<double (*)(double)>(std::floor);
     const double factor = std::min(round(content.width() / stepX), round(content.height() / stepY));
     double newWidth = factor * stepX;
     double newHeight = factor * stepY;

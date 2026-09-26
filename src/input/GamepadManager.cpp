@@ -7,7 +7,7 @@
 
 namespace {
 
-constexpr double kStickDeadzone = 0.35;   // For stick-as-d-pad emulation
+constexpr double kStickDeadzone = 0.35; // For stick-as-d-pad emulation
 constexpr double kTriggerThreshold = 0.5;
 
 QString buttonId(int button)
@@ -112,7 +112,7 @@ void GamepadManager::open(int instanceId)
     const char *serial = SDL_GetGamepadSerial(gamepad);
     const char *path = SDL_GetGamepadPath(gamepad);
     controller.uniqueId = QString::fromLatin1(guid) + QLatin1Char('-') +
-                          QString::fromUtf8(serial && *serial ? serial : (path ? path : ""));
+        QString::fromUtf8(serial && *serial ? serial : (path ? path : ""));
     if (SDL_GamepadHasSensor(gamepad, SDL_SENSOR_ACCEL)) {
         controller.hasAccelerometer = SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_ACCEL, true);
     }
@@ -196,7 +196,8 @@ void GamepadManager::setPlayerIndex(const QString &uniqueId, int player)
     }
 }
 
-void GamepadManager::emitInput(Controller &controller, const QString &inputId, bool pressed, double value, bool fromStick)
+void GamepadManager::emitInput(Controller &controller, const QString &inputId, bool pressed, double value,
+                               bool fromStick)
 {
     emit rawInput(controller.uniqueId, inputId, pressed, value);
     const GamepadAction action = actionFor(controller, inputId);
@@ -209,14 +210,11 @@ void GamepadManager::poll()
 {
     SDL_PumpEvents();
     SDL_Event event;
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_AXIS_MOTION, SDL_EVENT_GAMEPAD_SENSOR_UPDATE) > 0) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_AXIS_MOTION, SDL_EVENT_GAMEPAD_SENSOR_UPDATE) >
+           0) {
         switch (event.type) {
-            case SDL_EVENT_GAMEPAD_ADDED:
-                open(int(event.gdevice.which));
-                break;
-            case SDL_EVENT_GAMEPAD_REMOVED:
-                close(int(event.gdevice.which));
-                break;
+            case SDL_EVENT_GAMEPAD_ADDED: open(int(event.gdevice.which)); break;
+            case SDL_EVENT_GAMEPAD_REMOVED: close(int(event.gdevice.which)); break;
             case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
             case SDL_EVENT_GAMEPAD_BUTTON_UP: {
                 auto it = m_controllers.find(int(event.gbutton.which));
@@ -255,8 +253,10 @@ void GamepadManager::poll()
                     // The left stick also emulates the d-pad (JoyKit Axes2DEmulateButtons).
                     const QPointF stick = controller.leftStick;
                     const bool directions[4] = {
-                        stick.x() > kStickDeadzone, stick.x() < -kStickDeadzone,
-                        stick.y() < -kStickDeadzone, stick.y() > kStickDeadzone,
+                        stick.x() > kStickDeadzone,
+                        stick.x() < -kStickDeadzone,
+                        stick.y() < -kStickDeadzone,
+                        stick.y() > kStickDeadzone,
                     };
                     static const int dpad[4] = {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, SDL_GAMEPAD_BUTTON_DPAD_LEFT,
                                                 SDL_GAMEPAD_BUTTON_DPAD_UP, SDL_GAMEPAD_BUTTON_DPAD_DOWN};
@@ -281,8 +281,7 @@ void GamepadManager::poll()
                 emit accelerometer(it->uniqueId, QVector3D(data[0], data[1], data[2]) / SDL_STANDARD_GRAVITY);
                 break;
             }
-            default:
-                break;
+            default: break;
         }
     }
     // Drop anything else SDL queued so the queue doesn't grow.

@@ -76,7 +76,7 @@ private:
     void decreaseWindowSize();
     void zoom();
     void toggleFullScreen();
-    bool newWindowSize(int action, QSize *size) const;
+    bool newWindowSize(int action, QSize *result) const;
     void interrupt();
     void showConsole();
     void showMemory();

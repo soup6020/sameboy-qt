@@ -1,0 +1,57 @@
+# Matches the existing sameboy-qt style (see CLAUDE.md "Conventions").
+# Only our code is formatted; third_party/SameBoy has its own .clang-format-free style.
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++20
+ColumnLimit: 120
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+IndentCaseLabels: true
+PointerAlignment: Right
+ReferenceAlignment: Right
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: true
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortLambdasOnASingleLine: All
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: false
+AlignAfterOpenBracket: Align
+AlignOperands: DontAlign
+AlignTrailingComments: false
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+BinPackArguments: true
+BinPackParameters: true
+BreakConstructorInitializers: BeforeColon
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+PackConstructorInitializers: NextLine
+NamespaceIndentation: None
+FixNamespaceComments: true
+IndentExternBlock: NoIndent
+KeepEmptyLines:
+  AtStartOfBlock: false
+MaxEmptyLinesToKeep: 1
+SpaceAfterTemplateKeyword: false
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
+InsertNewlineAtEOF: true

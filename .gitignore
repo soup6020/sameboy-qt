@@ -1,3 +1,5 @@
 build/
 /.dev-env.sh
 /result
+compile_commands.json
+.cache/

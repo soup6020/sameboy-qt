@@ -69,9 +69,8 @@ CheatSearchWindow::CheatSearchWindow(EmulatorSession *session, QWidget *parent)
     connect(searchButton, &QPushButton::clicked, this, &CheatSearchWindow::search);
     connect(resetButton, &QPushButton::clicked, this, &CheatSearchWindow::reset);
     connect(m_addCheatButton, &QPushButton::clicked, this, &CheatSearchWindow::addCheat);
-    connect(m_table, &QTableWidget::itemSelectionChanged, this, [this] {
-        m_addCheatButton->setEnabled(!m_table->selectedItems().isEmpty());
-    });
+    connect(m_table, &QTableWidget::itemSelectionChanged, this,
+            [this] { m_addCheatButton->setEnabled(!m_table->selectedItems().isEmpty()); });
     connect(m_table, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item) {
         if (m_updatingTable || item->column() != 2) {
             return;
@@ -81,9 +80,8 @@ CheatSearchWindow::CheatSearchWindow(EmulatorSession *session, QWidget *parent)
         const int row = item->row();
         uint16_t value = 0;
         bool success = false;
-        const QString error = m_session->captureOutput([&] {
-            success = !GB_debugger_evaluate(m_session->gb(), expression.constData(), &value, nullptr);
-        });
+        const QString error = m_session->captureOutput(
+            [&] { success = !GB_debugger_evaluate(m_session->gb(), expression.constData(), &value, nullptr); });
         if (!success) {
             QApplication::beep();
             QToolTip::showText(QCursor::pos(), error, m_table, {}, 5000);
@@ -161,12 +159,12 @@ void CheatSearchWindow::search()
     const QByteArray expression = m_conditionField->text().toUtf8();
     const GB_cheat_search_data_type_t type = dataType();
     bool success = false;
-    const QString error = m_session->captureOutput([&] {
-        success = GB_cheat_search_filter(m_session->gb(), expression.constData(), type);
-    });
+    const QString error = m_session->captureOutput(
+        [&] { success = GB_cheat_search_filter(m_session->gb(), expression.constData(), type); });
     if (!success) {
         QApplication::beep();
-        QToolTip::showText(m_conditionField->mapToGlobal(QPoint(0, m_conditionField->height())), error, m_conditionField, {}, 5000);
+        QToolTip::showText(m_conditionField->mapToGlobal(QPoint(0, m_conditionField->height())), error,
+                           m_conditionField, {}, 5000);
         return;
     }
     m_session->performAtomic([&] {
@@ -178,8 +176,9 @@ void CheatSearchWindow::search()
         m_resultsLabel->setText(tr("No results."));
     }
     else {
-        m_resultsLabel->setText(tr("%1 result%2").arg(QLocale().toString(qulonglong(m_results.size())),
-                                                      m_results.size() > 1 ? QStringLiteral("s") : QString()));
+        m_resultsLabel->setText(tr("%1 result%2")
+                                    .arg(QLocale().toString(qulonglong(m_results.size())),
+                                         m_results.size() > 1 ? QStringLiteral("s") : QString()));
     }
 
     m_updatingTable = true;
@@ -189,10 +188,12 @@ void CheatSearchWindow::search()
     const bool sixteen = type & GB_CHEAT_SEARCH_DATA_TYPE_16BIT;
     for (int row = 0; row < rows; row++) {
         const auto &result = m_results[size_t(row)];
-        auto *address = new QTableWidgetItem(QStringLiteral("$%1:$%2").arg(result.bank, 2, 16, QLatin1Char('0'))
-                                                                       .arg(result.addr, 4, 16, QLatin1Char('0')));
+        auto *address = new QTableWidgetItem(QStringLiteral("$%1:$%2")
+                                                 .arg(result.bank, 2, 16, QLatin1Char('0'))
+                                                 .arg(result.addr, 4, 16, QLatin1Char('0')));
         address->setFlags(address->flags() & ~Qt::ItemIsEditable);
-        auto *previous = new QTableWidgetItem(QStringLiteral("$%1").arg(result.value, sixteen ? 4 : 2, 16, QLatin1Char('0')));
+        auto *previous =
+            new QTableWidgetItem(QStringLiteral("$%1").arg(result.value, sixteen ? 4 : 2, 16, QLatin1Char('0')));
         previous->setFlags(previous->flags() & ~Qt::ItemIsEditable);
         m_table->setItem(row, 0, address);
         m_table->setItem(row, 1, previous);
@@ -266,7 +267,8 @@ void CheatSearchWindow::addCheat()
     m_session->performAtomic([&] {
         GB_gameboy_t *gb = m_session->gb();
         const bool sixteen = type & GB_CHEAT_SEARCH_DATA_TYPE_16BIT;
-        GB_add_cheat(gb, sixteen ? "New Cheat (Part 1)" : "New Cheat", result.addr, result.bank, data[0], 0, false, true);
+        GB_add_cheat(gb, sixteen ? "New Cheat (Part 1)" : "New Cheat", result.addr, result.bank, data[0], 0, false,
+                     true);
         if (sixteen) {
             GB_add_cheat(gb, "New Cheat (Part 2)", uint16_t(result.addr + 1), result.bank, data[1], 0, false, true);
         }

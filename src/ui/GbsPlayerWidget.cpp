@@ -11,8 +11,7 @@
 #include <QTimer>
 #include <QToolButton>
 
-GbsVisualizer::GbsVisualizer(QWidget *parent)
-    : QWidget(parent), m_samples(kSampleCount)
+GbsVisualizer::GbsVisualizer(QWidget *parent) : QWidget(parent), m_samples(kSampleCount)
 {
     setMinimumSize(320, 96);
     auto *timer = new QTimer(this);
@@ -67,8 +66,7 @@ void GbsVisualizer::paintEvent(QPaintEvent *)
     painter.drawPath(left);
 }
 
-GbsPlayerWidget::GbsPlayerWidget(EmulatorSession *session, QWidget *parent)
-    : QWidget(parent), m_session(session)
+GbsPlayerWidget::GbsPlayerWidget(EmulatorSession *session, QWidget *parent) : QWidget(parent), m_session(session)
 {
     m_title = new QLabel;
     QFont titleFont = m_title->font();

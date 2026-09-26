@@ -92,8 +92,7 @@ QImage frameImage(EmulatorSession *session)
 
 // MARK: - GLScreenRenderer
 
-GLScreenRenderer::GLScreenRenderer(ScreenWidget *screen)
-    : QOpenGLWidget(screen), m_screen(screen)
+GLScreenRenderer::GLScreenRenderer(ScreenWidget *screen) : QOpenGLWidget(screen), m_screen(screen)
 {
     setAttribute(Qt::WA_TransparentForMouseEvents);
     setFocusPolicy(Qt::NoFocus);
@@ -189,10 +188,7 @@ void GLScreenRenderer::compileShader()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     static const GLfloat quad[16] = {
-        -1.f, -1.f, 0, 1,
-        -1.f, +1.f, 0, 1,
-        +1.f, -1.f, 0, 1,
-        +1.f, +1.f, 0, 1,
+        -1.f, -1.f, 0, 1, -1.f, +1.f, 0, 1, +1.f, -1.f, 0, 1, +1.f, +1.f, 0, 1,
     };
     glGenVertexArrays(1, &m_vao);
     glBindVertexArray(m_vao);
@@ -297,8 +293,7 @@ void GLScreenRenderer::drawOSD(int vx, int vy, int vw, int vh)
 
 // MARK: - ScreenWidget
 
-ScreenWidget::ScreenWidget(QWidget *parent)
-    : QWidget(parent), m_osd(new OSDOverlay(this))
+ScreenWidget::ScreenWidget(QWidget *parent) : QWidget(parent), m_osd(new OSDOverlay(this))
 {
     setFocusPolicy(Qt::StrongFocus);
     setAcceptDrops(true);
@@ -444,7 +439,7 @@ bool ScreenWidget::focusNextPrevChild(bool)
 bool ScreenWidget::mouseControlsActive() const
 {
     return m_session && GB_is_inited(m_session->gb()) && GB_has_accelerometer(m_session->gb()) &&
-           m_mouseControlEnabled && Settings::instance().boolValue(QStringLiteral("GBMBC7AllowMouse"));
+        m_mouseControlEnabled && Settings::instance().boolValue(QStringLiteral("GBMBC7AllowMouse"));
 }
 
 void ScreenWidget::mousePressEvent(QMouseEvent *event)

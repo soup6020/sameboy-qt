@@ -20,7 +20,11 @@ public:
     explicit GLScreenRenderer(ScreenWidget *screen);
     ~GLScreenRenderer() override;
 
-    void reloadShader() { m_needsShaderReload = true; update(); }
+    void reloadShader()
+    {
+        m_needsShaderReload = true;
+        update();
+    }
 
 signals:
     // Shaders could not be built; the host should switch to software rendering.
@@ -68,8 +72,8 @@ public:
     OSDOverlay *osd() const { return m_osd; }
     QString filterName() const { return m_filterName; }
 
-    QRect screenRect() const;  // Screen area inside the widget, logical pixels
-    QImage renderToImage();    // Filtered output at display resolution
+    QRect screenRect() const; // Screen area inside the widget, logical pixels
+    QImage renderToImage(); // Filtered output at display resolution
     void setMouseHidingEnabled(bool enabled);
     void setMouseControlEnabled(bool enabled) { m_mouseControlEnabled = enabled; }
     bool usesOpenGL() const { return m_renderer != nullptr; }

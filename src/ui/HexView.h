@@ -13,7 +13,7 @@ class HexView : public QAbstractScrollArea
 public:
     explicit HexView(MemoryModel *model, QWidget *parent = nullptr);
 
-    void reload();               // Re-read visible bytes and repaint
+    void reload(); // Re-read visible bytes and repaint
     void setCursorOffset(size_t offset, bool ensureVisible = true);
     size_t cursorOffset() const { return m_cursor; }
 

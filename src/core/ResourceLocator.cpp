@@ -16,9 +16,8 @@ QString dataDirectory()
         if (!env.isEmpty()) {
             candidates << env;
         }
-        const QString appDir = QCoreApplication::applicationDirPath();
-        candidates << appDir + QStringLiteral("/share/sameboy-qt")
-                   << appDir + QStringLiteral("/../share/sameboy-qt")
+        QString appDir = QCoreApplication::applicationDirPath();
+        candidates << appDir + QStringLiteral("/share/sameboy-qt") << appDir + QStringLiteral("/../share/sameboy-qt")
                    << appDir + QStringLiteral("/../Resources")
 #ifdef SAMEBOY_QT_INSTALL_DATADIR
                    << QStringLiteral(SAMEBOY_QT_INSTALL_DATADIR)
@@ -58,7 +57,7 @@ QString bootROMPath(const QString &name)
             return path;
         }
     }
-    const QString builtin = dataDirectory() + QStringLiteral("/BootROMs/") + name + QStringLiteral(".bin");
+    QString builtin = dataDirectory() + QStringLiteral("/BootROMs/") + name + QStringLiteral(".bin");
     if (QFileInfo::exists(builtin)) {
         return builtin;
     }

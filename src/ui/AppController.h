@@ -23,7 +23,7 @@ public:
 
     void openFiles(const QStringList &paths);
     void showOpenDialog();
-    void showPreferences();          // Opens on the last-used tab
+    void showPreferences(); // Opens on the last-used tab
     void showPreferencesTab(int tab); // PreferencesDialog::Tab
 
     // The Settings menu shared by game windows and the idle window: one entry

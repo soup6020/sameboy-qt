@@ -19,6 +19,8 @@ jobs:
             cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release &&
             cmake --build build &&
             cd build && QT_QPA_PLATFORM=offscreen SDL_AUDIO_DRIVER=dummy ctest --output-on-failure'
+      - name: Lint (clang-format + clang-tidy)
+        run: nix develop --command scripts/lint.sh
       - name: Submodule must stay pristine
         run: test -z "$(git -C third_party/SameBoy status --porcelain)"
       - name: Flake package

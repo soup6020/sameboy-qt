@@ -4,8 +4,7 @@
 #include <QPainter>
 #include <QPainterPath>
 
-CpuGraph::CpuGraph(EmulatorSession *session, QWidget *parent)
-    : QWidget(parent), m_session(session)
+CpuGraph::CpuGraph(EmulatorSession *session, QWidget *parent) : QWidget(parent), m_session(session)
 {
     setMinimumSize(64, 16);
 }

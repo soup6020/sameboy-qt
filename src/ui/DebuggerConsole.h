@@ -37,7 +37,7 @@ private:
     void updateFonts();
     void updateButtons();
     void updateCpuUsage();
-    void consoleInput(const QString &line);
+    void consoleInput(const QString &text);
 
     EmulatorSession *m_session;
     QTextEdit *m_output;

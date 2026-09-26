@@ -98,20 +98,11 @@ void MemoryViewer::updateSpace(int index)
     uint16_t bank = uint16_t(-1);
     GB_gameboy_t *gb = m_session->gb();
     switch (mode) {
-        case MemoryModel::EntireSpace:
-            break;
-        case MemoryModel::ROM:
-            GB_get_direct_access(gb, GB_DIRECT_ACCESS_ROM, nullptr, &bank);
-            break;
-        case MemoryModel::VRAM:
-            GB_get_direct_access(gb, GB_DIRECT_ACCESS_VRAM, nullptr, &bank);
-            break;
-        case MemoryModel::ExternalRAM:
-            GB_get_direct_access(gb, GB_DIRECT_ACCESS_CART_RAM, nullptr, &bank);
-            break;
-        case MemoryModel::RAM:
-            GB_get_direct_access(gb, GB_DIRECT_ACCESS_RAM, nullptr, &bank);
-            break;
+        case MemoryModel::EntireSpace: break;
+        case MemoryModel::ROM: GB_get_direct_access(gb, GB_DIRECT_ACCESS_ROM, nullptr, &bank); break;
+        case MemoryModel::VRAM: GB_get_direct_access(gb, GB_DIRECT_ACCESS_VRAM, nullptr, &bank); break;
+        case MemoryModel::ExternalRAM: GB_get_direct_access(gb, GB_DIRECT_ACCESS_CART_RAM, nullptr, &bank); break;
+        case MemoryModel::RAM: GB_get_direct_access(gb, GB_DIRECT_ACCESS_RAM, nullptr, &bank); break;
     }
     m_model.setSelectedBank(bank);
     m_bankForDescription = bank;
@@ -127,9 +118,8 @@ void MemoryViewer::updateBank(bool ignoreErrors)
     const QByteArray expression = m_bankInput->text().toUtf8();
     uint16_t address = 0, bank = 0;
     bool fail = false;
-    const QString error = m_session->captureOutput([&] {
-        fail = GB_debugger_evaluate(m_session->gb(), expression.constData(), &address, &bank);
-    });
+    const QString error = m_session->captureOutput(
+        [&] { fail = GB_debugger_evaluate(m_session->gb(), expression.constData(), &address, &bank); });
     if (!error.isEmpty() && !ignoreErrors) {
         showError(m_bankInput, error);
     }
@@ -148,20 +138,15 @@ void MemoryViewer::updateBank(bool ignoreErrors)
             banks = uint16_t(size / 0x4000);
             break;
         }
-        case MemoryModel::VRAM:
-            banks = GB_is_cgb(gb) ? 2 : 1;
-            break;
+        case MemoryModel::VRAM: banks = GB_is_cgb(gb) ? 2 : 1; break;
         case MemoryModel::ExternalRAM: {
             size_t size = 0;
             GB_get_direct_access(gb, GB_DIRECT_ACCESS_CART_RAM, &size, nullptr);
             banks = uint16_t((size + 0x1FFF) / 0x2000);
             break;
         }
-        case MemoryModel::RAM:
-            banks = GB_is_cgb(gb) ? 8 : 1;
-            break;
-        case MemoryModel::EntireSpace:
-            break;
+        case MemoryModel::RAM: banks = GB_is_cgb(gb) ? 8 : 1; break;
+        case MemoryModel::EntireSpace: break;
     }
     bank %= qMax<uint16_t>(banks, 1);
     m_model.setSelectedBank(bank);
@@ -183,9 +168,8 @@ void MemoryViewer::goTo()
     const QByteArray expression = m_goToInput->text().toUtf8();
     uint16_t address = 0, bank = 0;
     bool fail = false;
-    const QString error = m_session->captureOutput([&] {
-        fail = GB_debugger_evaluate(m_session->gb(), expression.constData(), &address, &bank);
-    });
+    const QString error = m_session->captureOutput(
+        [&] { fail = GB_debugger_evaluate(m_session->gb(), expression.constData(), &address, &bank); });
     if (!error.isEmpty()) {
         showError(m_goToInput, error);
     }

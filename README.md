@@ -105,6 +105,15 @@ Differences worth knowing:
 - Save ROM Modifications is Ctrl+Alt+Shift+S (⌃⌘S on macOS).
 - Settings live in `~/.config/sameboy-qt/sameboy-qt.conf` on Linux (the platform-native store elsewhere). They use the Cocoa key names (`GBFilter`, `GBColorCorrection`, …). As in the Cocoa app, battery saves (`.sav`), save states (`.s1`…`.s10`) and cheats (`.cht`) are stored next to each ROM, or inside a `.gbcart` cartridge instance.
 
+## Formatting and linting
+
+The dev shell includes clang-format, clang-tidy and clangd. Configuration lives in `.clang-format`, `.clang-tidy` and `.clangd` (clangd reads `build/compile_commands.json`).
+
+```sh
+scripts/lint.sh format   # reformat src/ and tests/
+scripts/lint.sh          # format check + clang-tidy (what CI runs); needs a configured build/
+```
+
 ## Tests
 
 ```sh
