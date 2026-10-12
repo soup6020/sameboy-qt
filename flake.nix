@@ -7,7 +7,7 @@
     # Mirrors the third_party/SameBoy submodule pin (flake sources don't include
     # submodules). scripts/sync-sameboy.sh keeps the two in step.
     sameboy = {
-      url = "github:LIJI32/SameBoy/213a12ce93d66b105a113debd9396306066a7cfc";
+      url = "github:LIJI32/SameBoy/98da08c3117a7bf39c7329fc662c0d18cb54707d";
       flake = false;
     };
   };
