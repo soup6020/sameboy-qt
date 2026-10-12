@@ -49,8 +49,11 @@
             inherit nativeBuildInputs buildInputs;
 
             postUnpack = ''
+              # Flake sources omit submodules. In a clean checkout third_party/
+              # holds nothing else, so it may not exist at all.
               if [ ! -e "$sourceRoot/third_party/SameBoy/Core/gb.h" ]; then
                 rm -rf "$sourceRoot/third_party/SameBoy"
+                mkdir -p "$sourceRoot/third_party"
                 cp -r ${inputs.sameboy} "$sourceRoot/third_party/SameBoy"
                 chmod -R u+w "$sourceRoot/third_party/SameBoy"
               fi

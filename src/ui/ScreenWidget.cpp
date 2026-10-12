@@ -410,7 +410,9 @@ void ScreenWidget::paintEvent(QPaintEvent *)
         return;
     }
     const QRect target = screenRect();
-    painter.setRenderHint(QPainter::SmoothPixmapTransform, m_filterName != QLatin1String("NearestNeighbor"));
+    // Pixelated exists to keep pixels crisp, so it maps to unsmoothed scaling too.
+    const bool crisp = m_filterName == QLatin1String("NearestNeighbor") || m_filterName == QLatin1String("Pixelated");
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, !crisp);
     painter.drawImage(target, frameImage(m_session));
     m_osd->paint(painter, target);
 }

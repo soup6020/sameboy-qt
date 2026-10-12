@@ -38,6 +38,11 @@ public:
     QStringList allKeys() const;
     QString storagePath() const { return m_store.fileName(); }
 
+    // One-time upgrades of an existing store, tracked by GBQtSettingsVersion, so
+    // that upstream default changes don't silently alter existing installs.
+    // A fresh store is stamped with the current version instead.
+    static void migrate(QSettings &store, bool freshStore);
+
 signals:
     void changed(const QString &key, const QVariant &value);
 

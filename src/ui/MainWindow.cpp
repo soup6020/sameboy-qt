@@ -801,17 +801,22 @@ void MainWindow::toggleAudioRecording()
     m_session->stop();
     const QString aiff = tr("Apple AIFF (*.aiff *.aif *.aifc)");
     const QString wav = tr("RIFF WAVE (*.wav)");
+    const QString vgm = tr("VGM Log (*.vgm)");
     const QString raw = tr("Raw PCM, Stereo 96KHz 16-bit LE (*.raw *.pcm)");
     QString selectedFilter = wav;
     QString path =
         QFileDialog::getSaveFileName(this, tr("Start Audio Recording"), QFileInfo(filePath()).path(),
-                                     QStringList{aiff, wav, raw}.join(QStringLiteral(";;")), &selectedFilter);
+                                     QStringList{aiff, wav, vgm, raw}.join(QStringLiteral(";;")), &selectedFilter);
     if (!path.isEmpty()) {
         GB_audio_format_t format = GB_AUDIO_FORMAT_WAV;
         QString extension = QStringLiteral("wav");
         if (selectedFilter == aiff) {
             format = GB_AUDIO_FORMAT_AIFF;
             extension = QStringLiteral("aiff");
+        }
+        else if (selectedFilter == vgm) {
+            format = GB_AUDIO_FORMAT_VGM;
+            extension = QStringLiteral("vgm");
         }
         else if (selectedFilter == raw) {
             format = GB_AUDIO_FORMAT_RAW;

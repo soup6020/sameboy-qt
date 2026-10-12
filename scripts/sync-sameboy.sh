@@ -18,7 +18,10 @@ git -C "$SUBMODULE" fetch --tags --force origin
 
 ref=${1:-}
 if [[ -z "$ref" ]]; then
-    ref=$(git -C "$SUBMODULE" tag --list 'v*' --sort=-version:refname | head -n1)
+    # Plain vX.Y.Z only: upstream also tags per-target builds (v1.0.4-libretro,
+    # -appstore), which version sort places above the release itself.
+    ref=$(git -C "$SUBMODULE" tag --list 'v*' --sort=-version:refname |
+        grep -E '^v[0-9]+(\.[0-9]+)*$' | head -n1)
     echo "Latest upstream release: $ref"
 elif [[ "$ref" == "master" ]]; then
     ref=origin/master

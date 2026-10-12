@@ -20,6 +20,7 @@
 #include <QScrollBar>
 #include <QTableWidget>
 #include <QTemporaryDir>
+#include <QtEndian>
 #include <QtTest>
 
 #include <SDL3/SDL.h>
@@ -96,7 +97,8 @@ private slots:
         QCOMPARE(settings.intValue(QStringLiteral("GBColorCorrection")), int(GB_COLOR_CORRECTION_MODERN_BALANCED));
         QCOMPARE(settings.intValue(QStringLiteral("GBCGBModel")), int(GB_MODEL_CGB_E));
         QCOMPARE(settings.intValue(QStringLiteral("GBSGBModel")), int(GB_MODEL_SGB2));
-        QCOMPARE(settings.stringValue(QStringLiteral("GBFilter")), QStringLiteral("NearestNeighbor"));
+        QCOMPARE(settings.stringValue(QStringLiteral("GBFilter")), QStringLiteral("Pixelated"));
+        QCOMPARE(settings.intValue(QStringLiteral("GBQtSettingsVersion")), 1);
         QCOMPARE(settings.intValue(QStringLiteral("GBRewindLength")), 120);
         QCOMPARE(settings.intValue(QStringLiteral("GBEmulatedModel")), int(EmulatedModel::Auto));
         QCOMPARE(settings.intValue(buttonPreferenceName(GBButton::A, 0)), int(Qt::Key_X));
@@ -104,6 +106,39 @@ private slots:
         const QVariantMap themes = settings.mapValue(QStringLiteral("GBThemes"));
         QCOMPARE(themes.size(), 14);
         QVERIFY(themes.contains(QStringLiteral("Canyon")));
+    }
+
+    void settingsMigration()
+    {
+        const auto storeAt = [this](const char *name) {
+            return m_directory.filePath(QStringLiteral("migration-%1.conf").arg(QLatin1String(name)));
+        };
+
+        // Fresh store: stamped with the current version, no filter pinned.
+        {
+            QSettings store(storeAt("fresh"), QSettings::IniFormat);
+            Settings::migrate(store, true);
+            QCOMPARE(store.value(QStringLiteral("GBQtSettingsVersion")).toInt(), 1);
+            QVERIFY(!store.contains(QStringLiteral("GBFilter")));
+            // Later launches must not mistake it for a pre-Pixelated install.
+            Settings::migrate(store, false);
+            QVERIFY(!store.contains(QStringLiteral("GBFilter")));
+        }
+        // Existing install that never chose a filter keeps Nearest neighbor.
+        {
+            QSettings store(storeAt("upgrade"), QSettings::IniFormat);
+            store.setValue(QStringLiteral("GBThemesVersion"), QStringLiteral("1.0.3"));
+            Settings::migrate(store, false);
+            QCOMPARE(store.value(QStringLiteral("GBFilter")).toString(), QStringLiteral("NearestNeighbor"));
+            QCOMPARE(store.value(QStringLiteral("GBQtSettingsVersion")).toInt(), 1);
+        }
+        // An explicit choice is left alone.
+        {
+            QSettings store(storeAt("explicit"), QSettings::IniFormat);
+            store.setValue(QStringLiteral("GBFilter"), QStringLiteral("CRT"));
+            Settings::migrate(store, false);
+            QCOMPARE(store.value(QStringLiteral("GBFilter")).toString(), QStringLiteral("CRT"));
+        }
     }
 
     void settingsLocation()
@@ -415,6 +450,27 @@ private slots:
         QCOMPARE(readByte(session.get(), 0xC000), saved);
     }
 
+    void loadStateErrorMessage()
+    {
+        // Since SameBoy 1.0.4 these messages carry GB_LOG_ERROR; they must still reach the user.
+        auto session = openSession();
+        QVERIFY(session);
+        waitForGame(session.get());
+        session->stop();
+        const QString path = session->saveStatePath(9);
+        {
+            QFile file(path);
+            QVERIFY(file.open(QIODevice::WriteOnly));
+            file.write(QByteArray(4096, '\x5A'));
+        }
+        auto cleanup = qScopeGuard([&] { QFile::remove(path); });
+        QSignalSpy warnings(session.get(), &EmulatorSession::warning);
+        session->loadState(9);
+        QCOMPARE(warnings.count(), 1);
+        QVERIFY2(warnings.first().first().toString().contains(QStringLiteral("not a save state")),
+                 qPrintable(warnings.first().first().toString()));
+    }
+
     void batterySave()
     {
         QString savPath;
@@ -487,6 +543,28 @@ private slots:
         QCOMPARE(header.left(4), QByteArray("RIFF"));
         QCOMPARE(header.mid(8, 4), QByteArray("WAVE"));
         QVERIFY(file.size() > 44 + 96000); // At least ~0.25 s of 16-bit stereo 96 kHz
+    }
+
+    void vgmRecording()
+    {
+        auto session = openSession();
+        QVERIFY(session);
+        waitForGame(session.get());
+        const QString path = m_directory.filePath(QStringLiteral("recording.vgm"));
+        QCOMPARE(session->startAudioRecording(path, GB_AUDIO_FORMAT_VGM), 0);
+        QVERIFY(session->isRecordingAudio());
+        QTest::qWait(300);
+        QCOMPARE(session->stopAudioRecording(), 0);
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        const QByteArray vgm = file.readAll();
+        QVERIFY(vgm.size() > 0xC0); // Header plus the APU snapshot and logged writes
+        const auto le32 = [&vgm](int offset) { return qFromLittleEndian<quint32>(vgm.constData() + offset); };
+        QCOMPARE(vgm.left(4), QByteArray("Vgm "));
+        QCOMPARE(le32(0x04) + 4, quint32(vgm.size())); // Relative EOF offset, patched on stop
+        QVERIFY(le32(0x18) > 0); // Total samples (44.1 kHz)
+        QVERIFY((le32(0x80) & 0x7FFFFFFF) != 0); // Game Boy DMG clock
+        QCOMPARE(quint8(vgm.back()), quint8(0x66)); // End of sound data
     }
 
     void cheats()

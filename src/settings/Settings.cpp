@@ -58,6 +58,7 @@ Settings::Settings()
             m_store.setValue(key, legacy.value(key));
         }
     }
+    migrate(m_store, m_store.allKeys().isEmpty());
     registerDefaults();
     if (m_store.value(QStringLiteral("GBThemesVersion")).toString() != QStringLiteral(GB_VERSION)) {
         updateThemesDefault(false);
@@ -82,7 +83,7 @@ void Settings::registerDefaults()
     d[buttonPreferenceName(GBButton::Rewind, 0)] = int(Qt::Key_Tab);
     d[buttonPreferenceName(GBButton::Underclock, 0)] = int(Qt::Key_Shift);
 
-    d["GBFilter"] = QStringLiteral("NearestNeighbor");
+    d["GBFilter"] = QStringLiteral("Pixelated");
     d["GBColorCorrection"] = int(GB_COLOR_CORRECTION_MODERN_BALANCED);
     d["GBHighpassFilter"] = int(GB_HIGHPASS_ACCURATE);
     d["GBRewindLength"] = 120;
@@ -131,6 +132,28 @@ void Settings::registerDefaults()
     // Qt-only additions (no Cocoa equivalent).
     d["GBPauseWhenInactive"] = false;
     d["GBMuteWhenInactive"] = false;
+}
+
+void Settings::migrate(QSettings &store, bool freshStore)
+{
+    static const QString versionKey = QStringLiteral("GBQtSettingsVersion");
+    constexpr int currentVersion = 1;
+
+    if (freshStore) {
+        store.setValue(versionKey, currentVersion);
+        return;
+    }
+    const int version = store.value(versionKey, 0).toInt();
+    if (version < 1) {
+        // SameBoy 1.0.4 changed the default filter to Pixelated. Unlike Cocoa,
+        // keep the previous default for installs that never chose a filter.
+        if (!store.contains(QStringLiteral("GBFilter"))) {
+            store.setValue(QStringLiteral("GBFilter"), QStringLiteral("NearestNeighbor"));
+        }
+    }
+    if (version < currentVersion) {
+        store.setValue(versionKey, currentVersion);
+    }
 }
 
 QVariant Settings::value(const QString &key) const

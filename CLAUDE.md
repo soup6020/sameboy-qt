@@ -23,20 +23,16 @@ A Qt 6 / C++20 frontend for SameBoy whose goal is feature parity with upstream's
 
 ## Build & test
 
-In the sandbox, `nix` itself is blocked (permission denied on `~/.local/share/nix`). The user generated `.dev-env.sh` (gitignored) with `nix print-dev-env`. Source it with **bash**, not zsh:
+`nix` works in the sandbox. Run the toolchain through the dev shell:
 
 ```sh
-bash -c 'source .dev-env.sh >/dev/null 2>&1; cmake -S . -B build -G Ninja && cmake --build build'
-bash -c 'source .dev-env.sh >/dev/null 2>&1; cd build && QT_QPA_PLATFORM=offscreen SDL_AUDIO_DRIVER=dummy ctest --output-on-failure'
+nix develop -c bash -c 'cmake -S . -B build -G Ninja && cmake --build build'
+nix develop -c bash -c 'cd build && QT_QPA_PLATFORM=offscreen SDL_AUDIO_DRIVER=dummy ctest --output-on-failure'
 ```
 
-If `.dev-env.sh` is missing or stale (for example after `flake.nix` changes), ask the user to run this **outside** Claude Code:
+`nix build` also works. It builds from the flake's pinned `sameboy` input and runs the tests and the install checks.
 
-```sh
-nix print-dev-env > .dev-env.sh
-```
-
-A `!` command runs inside the sandbox and fails.
+`CMakeCache.txt` records absolute `/nix/store` tool paths. After `flake.lock` changes, an existing build directory can fail with "ninja … no such file or directory". Delete `build/CMakeCache.txt` and re-run cmake.
 
 Toolchain: Qt 6.11, SDL3, rgbds (boot ROMs and the test ROM), GCC. The build must stay warning-free in `src/` and `tests/` (`-Wall -Wextra`).
 

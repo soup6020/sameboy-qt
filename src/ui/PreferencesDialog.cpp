@@ -272,7 +272,8 @@ QWidget *PreferencesDialog::createVideoTab()
 
     form->addRow(tr("Scaling filter:"),
                  comboBox(QStringLiteral("GBFilter"),
-                          {{tr("Nearest neighbor (Pixelated)"), QStringLiteral("NearestNeighbor")},
+                          {{tr("Nearest neighbor"), QStringLiteral("NearestNeighbor")},
+                           {tr("Pixelated"), QStringLiteral("Pixelated")},
                            {tr("Bilinear (Blurry)"), QStringLiteral("Bilinear")},
                            {tr("Smooth bilinear (Less blurry)"), QStringLiteral("SmoothBilinear")},
                            {tr("Monochrome LCD display"), QStringLiteral("MonoLCD")},
